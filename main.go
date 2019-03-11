@@ -16,17 +16,39 @@ func determineListenAddress() (string, error) {
 	}
 	return ":" + port, nil
   }
+
+
   func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Hello World")
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method == "POST"{
+		r.ParseForm()
+
+		id:=r.Form["id"][0]
+        fmt.Fprintln(w, "Here it is: "+id)
+	}else{
+		fmt.Fprintln(w, "not post")
+	}
+	
   }
+
+
+
   func main() {
+
 	addr, err := determineListenAddress()
 	if err != nil {
 	  log.Fatal(err)
 	}
+
 	http.HandleFunc("/", hello)
+
 	log.Printf("Listening on %s...\n", addr)
+
 	if err := http.ListenAndServe(addr, nil); err != nil {
 	  panic(err)
 	}
+
   }
