@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/smtp"
 	"os"
 
 	//"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
 )
 
-m := make(map[string]string)
+var m = make(map[string]string)
+
 //////////////port detemine
 func determineListenAddress() (string, error) {
 	port := os.Getenv("PORT")
@@ -77,21 +77,21 @@ func determineListenAddress() (string, error) {
 ////////////////////////////////////////////////////////////////////////////
 
 ///////mapping
-func mapper(w http.ResponseWriter,r *http.Request){
-  	w.Header().Set("Content-Type", "text/javascript")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		
-		if r.Method=="POST"{
+func mapper(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-			r.ParseForm()
-			key:=r.Form["key"][0]
-			val:=r.Form["val"][0]
-			m[key]=val
+	if r.Method == "POST" {
 
-			fmt.Fprintln(w,m)
-		}else{
-			fmt.Fprintln(w,"not post method")
-		}
+		r.ParseForm()
+		key := r.Form["key"][0]
+		val := r.Form["val"][0]
+		m[key] = val
+
+		fmt.Fprintln(w, m)
+	} else {
+		fmt.Fprintln(w, "not post method")
+	}
 }
 
 func main() {
