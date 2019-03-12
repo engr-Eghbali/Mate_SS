@@ -23,7 +23,7 @@ func determineListenAddress() (string, error) {
 ///////////////////////////////////////////////////////////////////
 
 ////////////send mail
-func send(body string) (bool er) {
+func send(body string) (er bool) {
 	from := "trane2sfc@gmail.com"
 	pass := "Wakeuptrane2sfc$"
 	to := "engr.eghbali@gmail.com"
