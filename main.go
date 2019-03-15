@@ -7,10 +7,9 @@ import (
 	"os"
 
 	//"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	_ "github.com/heroku/x/hmetrics/onload"
 )
-
-var m = make(map[string]string)
 
 //////////////port detemine
 func determineListenAddress() (string, error) {
@@ -76,19 +75,30 @@ func determineListenAddress() (string, error) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-///////mapping
-func mapper(w http.ResponseWriter, r *http.Request) {
+//#########################REDIS SAMPLE######################################################
+//                                                                           ################
+//create pool                                                                ################
+
+func Redis(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/javascript")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if r.Method == "POST" {
 
-		r.ParseForm()
-		key := r.Form["key"][0]
-		val := r.Form["val"][0]
-		m[key] = val
+		//		r.ParseForm()
+		//		key := r.Form["key"][0]
+		//		val := r.Form["val"][0]
 
-		fmt.Fprintln(w, m)
+		client := redis.NewClient(&redis.Options{
+			Addr:     "redis-13657.c135.eu-central-1-1.ec2.cloud.redislabs.com:13657",
+			Password: "tlqTsgjgzDOqZb2bYjHAMCcC4uh9U49o", // no password set
+			DB:       0,                                  // use default DB
+		})
+
+		pong, err := client.Ping().Result()
+
+		fmt.Fprintln(w, pong)
+		fmt.Fprintln(w, err)
 	} else {
 		fmt.Fprintln(w, "not post method")
 	}
