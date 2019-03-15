@@ -8,7 +8,6 @@ import (
 
 	//"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
-	_ "github.com/heroku/x/hmetrics/onload"
 )
 
 //////////////port detemine
