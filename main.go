@@ -110,7 +110,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", mapper)
+	http.HandleFunc("/", Redis)
 
 	log.Printf("Listening on %s...\n", addr)
 
