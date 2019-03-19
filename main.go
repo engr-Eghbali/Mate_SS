@@ -94,7 +94,7 @@ func Redis(w http.ResponseWriter, r *http.Request) {
 			DB:       0,                                  // use default DB
 		})
 
-		pong, err := client.Ping().Result()
+		_, err := client.Ping().Result()
 
 		if err != nil {
 			fmt.Fprintln(w, err)
