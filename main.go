@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	//"github.com/gin-gonic/gin"
 )
