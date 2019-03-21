@@ -2,44 +2,31 @@
 	"ImportPath": "go-getting-started",
 	"GoVersion": "go1.12",
 	"GodepVersion": "v80",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
 		{
-			"ImportPath": "github.com/go-redis/redis",
-			"Comment": "v6.15.2-10-g9ecae37",
-			"Rev": "9ecae37814bc6623672ec8967e2b322b23fd4540"
+			"ImportPath": "gopkg.in/mgo.v2",
+			"Comment": "r2016.08.01-7-g9856a29",
+			"Rev": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5"
 		},
 		{
-			"ImportPath": "github.com/go-redis/redis/internal",
-			"Comment": "v6.15.2-10-g9ecae37",
-			"Rev": "9ecae37814bc6623672ec8967e2b322b23fd4540"
+			"ImportPath": "gopkg.in/mgo.v2/bson",
+			"Comment": "r2016.08.01-7-g9856a29",
+			"Rev": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5"
 		},
 		{
-			"ImportPath": "github.com/go-redis/redis/internal/consistenthash",
-			"Comment": "v6.15.2-10-g9ecae37",
-			"Rev": "9ecae37814bc6623672ec8967e2b322b23fd4540"
+			"ImportPath": "gopkg.in/mgo.v2/internal/json",
+			"Comment": "r2016.08.01-7-g9856a29",
+			"Rev": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5"
 		},
 		{
-			"ImportPath": "github.com/go-redis/redis/internal/hashtag",
-			"Comment": "v6.15.2-10-g9ecae37",
-			"Rev": "9ecae37814bc6623672ec8967e2b322b23fd4540"
+			"ImportPath": "gopkg.in/mgo.v2/internal/sasl",
+			"Comment": "r2016.08.01-7-g9856a29",
+			"Rev": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5"
 		},
 		{
-			"ImportPath": "github.com/go-redis/redis/internal/pool",
-			"Comment": "v6.15.2-10-g9ecae37",
-			"Rev": "9ecae37814bc6623672ec8967e2b322b23fd4540"
-		},
-		{
-			"ImportPath": "github.com/go-redis/redis/internal/proto",
-			"Comment": "v6.15.2-10-g9ecae37",
-			"Rev": "9ecae37814bc6623672ec8967e2b322b23fd4540"
-		},
-		{
-			"ImportPath": "github.com/go-redis/redis/internal/util",
-			"Comment": "v6.15.2-10-g9ecae37",
-			"Rev": "9ecae37814bc6623672ec8967e2b322b23fd4540"
+			"ImportPath": "gopkg.in/mgo.v2/internal/scram",
+			"Comment": "r2016.08.01-7-g9856a29",
+			"Rev": "9856a29383ce1c59f308dd1cf0363a79b5bef6b5"
 		}
 	]
 }
