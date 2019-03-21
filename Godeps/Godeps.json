@@ -2,9 +2,6 @@
 	"ImportPath": "go-getting-started",
 	"GoVersion": "go1.12",
 	"GodepVersion": "v80",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
 		{
 			"ImportPath": "gopkg.in/mgo.v2",
