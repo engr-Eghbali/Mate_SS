@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"os"
 
+	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	//"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis"
 )
 
 //////////////port detemine
@@ -78,9 +79,61 @@ func determineListenAddress() (string, error) {
 //                                                                           ################
 //create pool                                                                ################
 
-func Redis(w http.ResponseWriter, r *http.Request) {
+//func Redis(w http.ResponseWriter, r *http.Request) {
+//	w.Header().Set("Content-Type", "text/javascript")
+//	w.Header().Set("Access-Control-Allow-Origin", "*")
+//
+//	if r.Method == "POST" {
+//
+//		r.ParseForm()
+//		key := r.Form["key"][0]
+//		val := r.Form["val"][0]
+//
+//		client := redis.NewClient(&redis.Options{
+//			Addr:     "redis-13657.c135.eu-central-1-1.ec2.cloud.redislabs.com:13657",
+//			Password: "tlqTsgjgzDOqZb2bYjHAMCcC4uh9U49o", // no password set
+//			DB:       0,                                  // use default DB
+//		})
+//
+//		_, err := client.Ping().Result()
+//
+//		if err != nil {
+//			fmt.Fprintln(w, err)
+//		} else {
+//
+//			err := client.Set(key, val, 0).Err()
+//			if err != nil {
+//				panic(err)
+//			}
+//
+//			value, err := client.Get(key).Result()
+//			if err != nil {
+//				panic(err)
+//			}
+//			fmt.Fprintln(w, value)
+//
+//		}
+//
+//	} else {
+//		fmt.Fprintln(w, "not post method")
+//	}
+//}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////postqresql simple sample
+
+func MongoTest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/javascript")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	type user struct {
+		ID    bson.ObjectId `json:"id" bson:"_id,omitempty"`
+		Name  string        `json:"name"`
+		Phone string        `json:"Phone"`
+	}
+
+	var newuser user
 
 	if r.Method == "POST" {
 
@@ -88,28 +141,33 @@ func Redis(w http.ResponseWriter, r *http.Request) {
 		key := r.Form["key"][0]
 		val := r.Form["val"][0]
 
-		client := redis.NewClient(&redis.Options{
-			Addr:     "redis-13657.c135.eu-central-1-1.ec2.cloud.redislabs.com:13657",
-			Password: "tlqTsgjgzDOqZb2bYjHAMCcC4uh9U49o", // no password set
-			DB:       0,                                  // use default DB
-		})
+		newuser.ID = bson.NewObjectId()
+		newuser.Name = key
+		newuser.Phone = val
 
-		_, err := client.Ping().Result()
+		session, err := mgo.Dial("mongodb://udlt7amzwwc3lav9copw:QWqGAUmRLERX081CYU4k@bkbfbtpiza46rc3-mongodb.services.clever-cloud.com:27017/bkbfbtpiza46rc3")
+		defer session.Close()
+		session.SetMode(mgo.Monotonic, true)
 
 		if err != nil {
+
 			fmt.Fprintln(w, err)
+
 		} else {
 
-			err := client.Set(key, val, 0).Err()
-			if err != nil {
-				panic(err)
-			}
+			///**check if any inorder cart ,remove it befor start new one
+			c := session.DB("bkbfbtpiza46rc3").C("users")
+			err = c.Insert(&newuser)
 
-			value, err := client.Get(key).Result()
 			if err != nil {
-				panic(err)
+
+				fmt.Fprintln(w, "query failed")
+
+			} else {
+
+				fmt.Fprintln(w, "query done")
+
 			}
-			fmt.Fprintln(w, value)
 
 		}
 
@@ -118,6 +176,8 @@ func Redis(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/////////////////////////////////////////////////////////////////////////
+
 func main() {
 
 	addr, err := determineListenAddress()
@@ -125,7 +185,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", Redis)
+	http.HandleFunc("/", MongoTest)
 
 	log.Printf("Listening on %s...\n", addr)
 
