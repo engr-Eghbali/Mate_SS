@@ -36,3 +36,8 @@
 [prune]
   go-tests = true
   unused-packages = true
+  
+[metadata.heroku]
+  root-package = "go-getting-started"
+  go-version = "1.12.0"
+  install = [ "./..." ]
