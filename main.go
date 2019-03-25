@@ -3,13 +3,27 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	//"github.com/gin-gonic/gin/"
 )
+
+///////!!! GLOBAL VARS !!!!!!/////////
+
+var session *mgo.Session
+
+type User struct {
+	ID    bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	Name  string        `json:name`
+	Phone string        `json:phone`
+	Email string        `json:email`
+}
 
 //////////////port detemine
 func determineListenAddress() (string, error) {
@@ -123,73 +137,131 @@ func determineListenAddress() (string, error) {
 
 ///////////////postqresql simple sample
 
-func MongoTest(w http.ResponseWriter, r *http.Request) {
+//func MongoTest(w http.ResponseWriter, r *http.Request) {
+//	w.Header().Set("Content-Type", "text/javascript")
+//	w.Header().Set("Access-Control-Allow-Origin", "*")
+//
+//	type user struct {
+//		ID    bson.ObjectId `json:"id" bson:"_id,omitempty"`
+//		Name  string        `json:"name"`
+//		Phone string        `json:"Phone"`
+//	}
+//
+//	var newuser user
+//
+//	if r.Method == "POST" {
+//
+//		r.ParseForm()
+//		key := r.Form["key"][0]
+//		val := r.Form["val"][0]
+//
+//		newuser.ID = bson.NewObjectId()
+//		newuser.Name = key
+//		newuser.Phone = val
+//
+//		session, err := mgo.Dial("mongodb://udlt7amzwwc3lav9copw:QWqGAUmRLERX081CYU4k@bkbfbtpiza46rc3-mongodb.services.clever-cloud.com:27017/bkbfbtpiza46rc3")
+//		defer session.Close()
+//		session.SetMode(mgo.Monotonic, true)
+//
+//		if err != nil {
+//
+//			fmt.Fprintln(w, err)
+//
+//		} else {
+//
+//			///**check if any inorder cart ,remove it befor start new one
+//			c := session.DB("bkbfbtpiza46rc3").C("users")
+//			err = c.Insert(&newuser)
+//
+//			if err != nil {
+//
+//				fmt.Fprintln(w, "query failed")
+//
+//			} else {
+//
+//				fmt.Fprintln(w, "query done")
+//
+//			}
+//
+//		}
+//
+//	} else {
+//		fmt.Fprintln(w, "not post method")
+//	}
+//}
+//
+/////////////////////////////////////////////////////////////////////////
+
+///// Generate/save/send verification code to client Email
+func SendVerificationMail(mail string) (err bool) {
+
+	//generate
+	rand.Seed(time.Now().UnixNano())
+	vc := 100000 + rand.Intn(999999-100000)
+
+	//save
+
+}
+
+////////// Handle submit function
+func SubmitReq(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/javascript")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	type user struct {
-		ID    bson.ObjectId `json:"id" bson:"_id,omitempty"`
-		Name  string        `json:"name"`
-		Phone string        `json:"Phone"`
-	}
+	r.ParseForm()
+	mORp := r.Form["type"][0]
+	data := r.Form["data"][0]
 
-	var newuser user
+	if mORp == "m" {
 
-	if r.Method == "POST" {
+		if strings.Contains(data, "@") {
 
-		r.ParseForm()
-		key := r.Form["key"][0]
-		val := r.Form["val"][0]
+			err := SendVerificationMail(data)
 
-		newuser.ID = bson.NewObjectId()
-		newuser.Name = key
-		newuser.Phone = val
-
-		session, err := mgo.Dial("mongodb://udlt7amzwwc3lav9copw:QWqGAUmRLERX081CYU4k@bkbfbtpiza46rc3-mongodb.services.clever-cloud.com:27017/bkbfbtpiza46rc3")
-		defer session.Close()
-		session.SetMode(mgo.Monotonic, true)
-
-		if err != nil {
-
-			fmt.Fprintln(w, err)
-
-		} else {
-
-			///**check if any inorder cart ,remove it befor start new one
-			c := session.DB("bkbfbtpiza46rc3").C("users")
-			err = c.Insert(&newuser)
-
-			if err != nil {
-
-				fmt.Fprintln(w, "query failed")
-
+			if err != true {
+				fmt.Fprintf(w, "0")
 			} else {
-
-				fmt.Fprintln(w, "query done")
-
+				fmt.Fprintf(w, "1")
 			}
-
 		}
 
-	} else {
-		fmt.Fprintln(w, "not post method")
+	}
+
+	///// handle confirm code by SMS
+	//	if mORp =="p"{
+	//	}
+
+	if mORp != "m" && mORp != "p" {
+		fmt.Fprintf(w, "bad request")
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
 func main() {
 
+	///main vars
+	var DBerr error
+
+	/// Call determine listen address
 	addr, err := determineListenAddress()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", MongoTest)
+	/// Mongo Dialling
+	session, DBerr = mgo.Dial("mongodb://udlt7amzwwc3lav9copw:QWqGAUmRLERX081CYU4k@bkbfbtpiza46rc3-mongodb.services.clever-cloud.com:27017/bkbfbtpiza46rc3")
+	defer session.Close()
+	session.SetMode(mgo.Monotonic, true)
+	if DBerr != nil {
+		log.Fatal(DBerr)
+	}
 
-	log.Printf("Listening on %s...\n", addr)
+	//Routing
+	http.HandleFunc("/submit", SubmitReq)
 
-	if err := http.ListenAndServe(addr, nil); err != nil {
+	if Port_err := http.ListenAndServe(addr, nil); err != nil {
 		panic(err)
 	}
 
