@@ -291,14 +291,14 @@ func Authenticator(w http.ResponseWriter, r *http.Request) {
 
 	if FindErr == mgo.ErrNotFound {
 		SubmitReq(w, mORp, data)
-
+		return
 	}
 
 	if FindErr != nil {
 
 		log.Println("=>User Submition Canceled Cause of DB Find Query Err:003")
 		log.Println(FindErr)
-		log.Println("End<=002")
+		log.Println("End<=003")
 		fmt.Fprintln(w, "0")
 		return
 	}
