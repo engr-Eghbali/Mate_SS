@@ -5,7 +5,9 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/smtp"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,10 +21,12 @@ import (
 var session *mgo.Session
 
 type User struct {
-	ID    bson.ObjectId `json:"id" bson:"_id,omitempty"`
-	Name  string        `json:name`
-	Phone string        `json:phone`
-	Email string        `json:email`
+	ID     bson.ObjectId `json:"id" bson:"_id,omitempty"`
+	Name   string        `json:name`
+	Phone  string        `json:phone`
+	Email  string        `json:email`
+	Vc     string        `json:vc`
+	Status int8          `json:status`
 }
 
 //////////////port detemine
@@ -37,28 +41,28 @@ func determineListenAddress() (string, error) {
 ///////////////////////////////////////////////////////////////////
 
 ////////////send mail
-// func send(body string) (er bool) {
-//	from := "trane2sfc@gmail.com"
-//	pass := "Wakeuptrane2sfc$"
-//	to := "engr.eghbali@gmail.com"
-//
-//	msg := "From: " + from + "\n" +
-//		"To: " + to + "\n" +
-//		"Subject: Hello there\n\n" +
-//		body
-//
-//	err := smtp.SendMail("smtp.gmail.com:587",
-//		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
-//		from, []string{to}, []byte(msg))
-//
-//	if err != nil {
-//		log.Printf("smtp error: %s", err)
-//		return false
-//	}
-//
-//	log.Print("sent, visit http://foobarbazz.mailinator.com")
-//	return true
-//}
+func SendMail(body string, recipient string) (er bool) {
+	from := "whereismymate.app@gmail.com"
+	pass := "Wakeuptrane2sfc$"
+	to := recipient
+
+	msg := "From: " + from + "\n" +
+		"To: " + to + "\n" +
+		"Subject: Hello there\n\n" +
+		body
+
+	err := smtp.SendMail("smtp.gmail.com:587",
+		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
+		from, []string{to}, []byte(msg))
+
+	if err != nil {
+		log.Printf("smtp error: %s", err)
+		return false
+	}
+
+	log.Print("verification code sent to : " + recipient)
+	return true
+}
 
 ////////////////////////////////////////////////////////
 
@@ -197,9 +201,29 @@ func SendVerificationMail(mail string) (err bool) {
 
 	//generate
 	rand.Seed(time.Now().UnixNano())
-	vc := 100000 + rand.Intn(999999-100000)
+	vc := strconv.Itoa(100000 + rand.Intn(999999-100000))
 
 	//save
+	NewUser := User{ID: bson.NewObjectId(), Name: "none", Phone: "none", Email: mail, Vc: vc, Status: 0}
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+	InsertErr := collection.Insert(&NewUser)
+	if InsertErr != nil {
+		log.Println("=>User Submition Failed Cause Of DB Insert Error:001")
+		log.Println(InsertErr)
+		log.Println("End <=001")
+		return false
+	}
+
+	//send
+	MailErr := SendMail(vc, mail)
+	if MailErr != true {
+		log.Println("User Submition Failed Cause Of SMTP Error:002")
+		log.Println(MailErr)
+		log.Println("End <=002")
+		return false
+	}
+
+	return true
 
 }
 
@@ -261,7 +285,7 @@ func main() {
 	//Routing
 	http.HandleFunc("/submit", SubmitReq)
 
-	if Port_err := http.ListenAndServe(addr, nil); err != nil {
+	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
 
