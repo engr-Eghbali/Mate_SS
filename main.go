@@ -228,13 +228,10 @@ func SendVerificationMail(mail string) (err bool) {
 }
 
 ////////// Handle submit function
-func SubmitReq(w http.ResponseWriter, r *http.Request) {
+func SubmitReq(w http.ResponseWriter, mORp string, data string) {
+
 	w.Header().Set("Content-Type", "text/javascript")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	r.ParseForm()
-	mORp := r.Form["type"][0]
-	data := r.Form["data"][0]
 
 	if mORp == "m" {
 
@@ -244,8 +241,10 @@ func SubmitReq(w http.ResponseWriter, r *http.Request) {
 
 			if err != true {
 				fmt.Fprintf(w, "0")
+				return
 			} else {
 				fmt.Fprintf(w, "1")
+				return
 			}
 		}
 
@@ -257,11 +256,57 @@ func SubmitReq(w http.ResponseWriter, r *http.Request) {
 
 	if mORp != "m" && mORp != "p" {
 		fmt.Fprintf(w, "bad request")
+		return
 	}
+
 }
 
 ///////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+
+//// login or submit? make sure....
+func Authenticator(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	r.ParseForm()
+	mORp := r.Form["type"][0]
+	data := r.Form["data"][0]
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+	temp := new(User)
+	var FindErr error
+
+	if mORp == "m" {
+		FindErr = collection.Find(bson.M{"email": data}).One(&temp)
+	}
+	if mORp == "p" {
+		FindErr = collection.Find(bson.M{"phone": data}).One(&temp)
+	}
+
+	if FindErr == mgo.ErrNotFound {
+		SubmitReq(w, mORp, data)
+
+	}
+
+	if FindErr != nil {
+
+		log.Println("=>User Submition Canceled Cause of DB Find Query Err:003")
+		log.Println(FindErr)
+		log.Println("End<=002")
+		fmt.Fprintln(w, "0")
+		return
+	}
+
+	//if temp.Status == 0 { LoginUser() }
+	//if temp.Status == 1 { LogedinUserHandler()}
+
+}
 
 func main() {
 
@@ -283,7 +328,7 @@ func main() {
 	}
 
 	//Routing
-	http.HandleFunc("/submit", SubmitReq)
+	http.HandleFunc("/Auth", Authenticator)
 
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
