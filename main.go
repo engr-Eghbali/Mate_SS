@@ -5,8 +5,9 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"net/smtp"
 	"os"
+	services "pkg"
+	structs "pkg/basement"
 	"strconv"
 	"strings"
 	"time"
@@ -20,15 +21,6 @@ import (
 
 var session *mgo.Session
 
-type User struct {
-	ID     bson.ObjectId `json:"id" bson:"_id,omitempty"`
-	Name   string        `json:name`
-	Phone  string        `json:phone`
-	Email  string        `json:email`
-	Vc     string        `json:vc`
-	Status int8          `json:status`
-}
-
 //////////////port detemine
 func determineListenAddress() (string, error) {
 	port := os.Getenv("PORT")
@@ -39,32 +31,6 @@ func determineListenAddress() (string, error) {
 }
 
 ///////////////////////////////////////////////////////////////////
-
-////////////send mail
-func SendMail(body string, recipient string) (er bool) {
-	from := "whereismymate.app@gmail.com"
-	pass := "Wakeuptrane2sfc$"
-	to := recipient
-
-	msg := "From: " + from + "\n" +
-		"To: " + to + "\n" +
-		"Subject: Hello there\n\n" +
-		body
-
-	err := smtp.SendMail("smtp.gmail.com:587",
-		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
-		from, []string{to}, []byte(msg))
-
-	if err != nil {
-		log.Printf("smtp error: %s", err)
-		return false
-	}
-
-	log.Print("verification code sent to : " + recipient)
-	return true
-}
-
-////////////////////////////////////////////////////////
 
 ///////////ajax response and parse
 //func hello(w http.ResponseWriter, r *http.Request) {
@@ -204,7 +170,7 @@ func SendVerificationMail(mail string) (err bool) {
 	vc := strconv.Itoa(100000 + rand.Intn(999999-100000))
 
 	//save
-	NewUser := User{ID: bson.NewObjectId(), Name: "none", Phone: "none", Email: mail, Vc: vc, Status: 0}
+	NewUser := structs.User{ID: bson.NewObjectId(), Name: "none", Phone: "none", Email: mail, Vc: vc, Status: 0}
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
 	InsertErr := collection.Insert(&NewUser)
 	if InsertErr != nil {
@@ -215,7 +181,7 @@ func SendVerificationMail(mail string) (err bool) {
 	}
 
 	//send
-	MailErr := SendMail(vc, mail)
+	MailErr := services.SendMail(vc, mail)
 	if MailErr != true {
 		log.Println("User Submition Failed Cause Of SMTP Error:002")
 		log.Println(MailErr)
@@ -228,41 +194,87 @@ func SendVerificationMail(mail string) (err bool) {
 }
 
 ////////// Handle submit function
-func SubmitReq(w http.ResponseWriter, mORp string, data string) {
+func SubmitReq(w http.ResponseWriter, data string) {
 
 	w.Header().Set("Content-Type", "text/javascript")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	if mORp == "m" {
+	if strings.Contains(data, "@") {
 
-		if strings.Contains(data, "@") {
+		err := SendVerificationMail(data)
 
-			err := SendVerificationMail(data)
-
-			if err != true {
-				fmt.Fprintf(w, "0")
-				return
-			} else {
-				fmt.Fprintf(w, "1")
-				return
-			}
+		if err != true {
+			fmt.Fprintf(w, "0")
+			return
+		} else {
+			fmt.Fprintf(w, "1")
+			return
 		}
-
 	}
 
 	///// handle confirm code by SMS
 	//	if mORp =="p"{
 	//	}
 
-	if mORp != "m" && mORp != "p" {
-		fmt.Fprintf(w, "bad request")
-		return
-	}
-
 }
 
 ///////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+
+///////verify user by verification code
+func UserVerify(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		r.ParseForm()
+		data := r.Form["ID"][0]
+		vc := r.Form["vc"][0]
+		collection := session.DB("bkbfbtpiza46rc3").C("users")
+		temp := new(structs.User)
+		var FindErr error
+
+		if strings.Contains(data, "@") {
+			FindErr = collection.Find(bson.M{"email": data}).One(&temp)
+
+		} else {
+			FindErr = collection.Find(bson.M{"phone": data}).One(&temp)
+
+		}
+
+		if FindErr == mgo.ErrNotFound {
+			fmt.Fprintln(w, "-1")
+			log.Println("VC Canceled by Not Found Error due to bad request maybe:004")
+			log.Println(FindErr)
+			log.Println("<=End004")
+			return
+		}
+
+		if temp.Vc == vc {
+			err := collection.Update(bson.M{"_id": temp.ID}, bson.M{"$set": bson.M{"status": 1}})
+
+			if err != nil {
+				fmt.Fprintln(w, "0")
+				log.Println("VC Canceled due to DB error:005")
+				log.Println(err)
+				log.Println("<=End005")
+			} else {
+				fmt.Fprintln(w, "1")
+			}
+
+		} else {
+			fmt.Fprintln(w, "0")
+		}
+
+	} else {
+		fmt.Fprintln(w, "bad request")
+	}
+
+}
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 //// login or submit? make sure....
 func Authenticator(w http.ResponseWriter, r *http.Request) {
@@ -276,27 +288,25 @@ func Authenticator(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.ParseForm()
-	mORp := r.Form["type"][0]
 	data := r.Form["data"][0]
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
-	temp := new(User)
+	temp := new(structs.User)
 	var FindErr error
 
-	if mORp == "m" {
+	if strings.Contains(data, "@") {
 		FindErr = collection.Find(bson.M{"email": data}).One(&temp)
-	}
-	if mORp == "p" {
+	} else {
 		FindErr = collection.Find(bson.M{"phone": data}).One(&temp)
 	}
 
 	if FindErr == mgo.ErrNotFound {
-		SubmitReq(w, mORp, data)
+		SubmitReq(w, data)
 		return
 	}
 
 	if FindErr != nil {
 
-		log.Println("=>User Submition Canceled Cause of DB Find Query Err:003")
+		log.Println("=>User Submition/Login Canceled Cause of DB Find Query Err:003")
 		log.Println(FindErr)
 		log.Println("End<=003")
 		fmt.Fprintln(w, "0")
@@ -329,7 +339,7 @@ func main() {
 
 	//Routing
 	http.HandleFunc("/Auth", Authenticator)
-
+	http.HandleFunc("Verify", UserVerify)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
