@@ -36,8 +36,15 @@
 [prune]
   go-tests = true
   unused-packages = true
-  
+
 [metadata.heroku]
   root-package = "go-getting-started"
   go-version = "1.12.0"
   install = [ "./..." ]
+[[constraint]]
+  branch = "master"
+  name = "github.com/engr-Eghbali/matePKG.git"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/engr-Eghbali/matePKG"

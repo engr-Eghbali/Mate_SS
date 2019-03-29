@@ -6,11 +6,13 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	services "pkg"
-	structs "pkg/basement"
 	"strconv"
 	"strings"
 	"time"
+
+	services "github.com/engr-Eghbali/matePKG"
+
+	structs "github.com/engr-Eghbali/matePKG/basement"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
