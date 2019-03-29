@@ -230,6 +230,10 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+
+	} else {
+
 		r.ParseForm()
 		data := r.Form["ID"][0]
 		vc := r.Form["vc"][0]
@@ -269,8 +273,6 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "0")
 		}
 
-	} else {
-		fmt.Fprintln(w, "bad request")
 	}
 
 }
