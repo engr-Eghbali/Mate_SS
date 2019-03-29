@@ -3,11 +3,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d10a0e611b8791bd7a811cda319c84b3e36a854024df3666ee306c12f9708b2c"
+  digest = "1:b8c0770a89acfb43aec00c8498df5213f2d118b4ad9c6ebec10801f180c463ad"
   name = "github.com/engr-Eghbali/matePKG"
-  packages = ["basement"]
+  packages = [
+    ".",
+    "basement",
+  ]
   pruneopts = "UT"
-  revision = "331fd62c3d6cfc8a27070cc5c7be753ea014bb14"
+  revision = "c4d5e89c20ddf00cfb447298caaade7aa88b0671"
 
 [[projects]]
   branch = "v2"
@@ -27,6 +30,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/engr-Eghbali/matePKG",
     "github.com/engr-Eghbali/matePKG/basement",
     "gopkg.in/mgo.v2",
     "gopkg.in/mgo.v2/bson",
