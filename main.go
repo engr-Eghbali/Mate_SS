@@ -339,7 +339,7 @@ func main() {
 
 	//Routing
 	http.HandleFunc("/Auth", Authenticator)
-	http.HandleFunc("Verify", UserVerify)
+	http.HandleFunc("/Verify", UserVerify)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
