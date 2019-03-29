@@ -183,7 +183,8 @@ func SendVerificationMail(mail string) (err bool) {
 	}
 
 	//send
-	MailErr := services.SendMail(vc, mail)
+	origin := services.MailOrigin{From: "whereismymate.app@gmail.com", Password: "Wakeuptrane2sfc$"}
+	MailErr := services.SendMail(vc, mail, origin)
 	if MailErr != true {
 		log.Println("User Submition Failed Cause Of SMTP Error:002")
 		log.Println(MailErr)

@@ -5,20 +5,22 @@ import (
 	"net/smtp"
 )
 
-////////////send mail
-func SendMail(body string, recipient string) (er bool) {
-	from := "whereismymate.app@gmail.com"
-	pass := "Wakeuptrane2sfc$"
-	to := recipient
+type MailOrigin struct {
+	From     string
+	Password string
+}
 
-	msg := "From: " + from + "\n" +
-		"To: " + to + "\n" +
+////////////send mail
+func SendMail(body string, recipient string, origin MailOrigin) (er bool) {
+
+	msg := "From: " + origin.From + "\n" +
+		"To: " + recipient + "\n" +
 		"Subject: Your verification code is : \n\n" +
 		body
 
 	err := smtp.SendMail("smtp.gmail.com:587",
-		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
-		from, []string{to}, []byte(msg))
+		smtp.PlainAuth("", origin.From, origin.Password, "smtp.gmail.com"),
+		origin.From, []string{recipient}, []byte(msg))
 
 	if err != nil {
 		log.Printf("smtp error: %s", err)
