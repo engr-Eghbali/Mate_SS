@@ -44,6 +44,7 @@ func SendSms(txt string, recipient string, origin SmsOrigin) bool {
 
 	resp, err := http.Get("https://login.parsgreen.com/UrlService/sendSMS.ashx?from=" + origin.From + "&to=" + recipient + "&&text=" + txt + "&signature=" + origin.ApiKey)
 	defer resp.Body.Close()
+	log.Println(resp.Body)
 	if err != nil {
 		// handle error
 		log.Println("Sending SMS to: " + recipient + " Failed 006 <=End")
