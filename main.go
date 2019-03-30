@@ -172,7 +172,7 @@ func SendVerificationMail(mail string) (err bool) {
 	vc := strconv.Itoa(100000 + rand.Intn(999999-100000))
 
 	//save
-	NewUser := structs.User{ID: bson.NewObjectId(), Name: "none", Phone: "none", Email: mail, Vc: vc, Status: 0}
+	NewUser := structs.User{ID: bson.NewObjectId(), Name: "none", Phone: "none", Email: mail, Vc: vc, Status: 0, FriendList: nil, Meetings: nil, Requests: nil}
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
 	InsertErr := collection.Insert(&NewUser)
 	if InsertErr != nil {
@@ -189,6 +189,41 @@ func SendVerificationMail(mail string) (err bool) {
 		log.Println("User Submition Failed Cause Of SMTP Error:002")
 		log.Println(MailErr)
 		log.Println("End <=002")
+		return false
+	}
+
+	return true
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+//////generate/save/send verification code to client Phone No
+func SendVerificationSMS(phone string) bool {
+
+	//generate
+	rand.Seed(time.Now().UnixNano())
+	vc := strconv.Itoa(100000 + rand.Intn(999999-100000))
+
+	//save
+	NewUser := structs.User{ID: bson.NewObjectId(), Name: "none", Phone: "none", Email: "", Vc: vc, Status: 0, FriendList: nil, Meetings: nil, Requests: nil}
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+	InsertErr := collection.Insert(&NewUser)
+	if InsertErr != nil {
+		log.Println("=>User Submition Failed Cause Of DB Insert Error:007")
+		log.Println(InsertErr)
+		log.Println("End <=007")
+		return false
+	}
+
+	//send
+	origin := services.SmsOrigin{From: "10001398", ApiKey: "ED09D0D7-5FBA-43A2-8B9D-F0AE79666B52"}
+	SmsErr := services.SendSms("verification code: "+vc, phone, origin)
+	if SmsErr != true {
+		log.Println("User Submition Failed Cause Of SMS service Error:008")
+		log.Println(SmsErr)
+		log.Println("End <=008")
 		return false
 	}
 
@@ -213,6 +248,17 @@ func SubmitReq(w http.ResponseWriter, data string) {
 			fmt.Fprintf(w, "1")
 			return
 		}
+	} else {
+
+		err := SendVerificationSMS(data)
+		if err != true {
+			fmt.Fprintf(w, "0")
+			return
+		} else {
+			fmt.Fprintf(w, "1")
+			return
+		}
+
 	}
 
 	///// handle confirm code by SMS

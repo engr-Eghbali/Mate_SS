@@ -35,5 +35,5 @@ type User struct {
 	Status     int8            `json:status`
 	FriendList []bson.ObjectId `json:friendlist`
 	Meetings   []Meet          `json:meetings`
-	requests   []Request       `json:request`
+	Requests   []Request       `json:request`
 }

@@ -2,12 +2,18 @@ package services
 
 import (
 	"log"
+	"net/http"
 	"net/smtp"
 )
 
 type MailOrigin struct {
 	From     string
 	Password string
+}
+
+type SmsOrigin struct {
+	From   string
+	ApiKey string
 }
 
 ////////////send mail
@@ -32,3 +38,19 @@ func SendMail(body string, recipient string, origin MailOrigin) (er bool) {
 }
 
 ////////////////////////////////////////////////////////
+
+////////////sned sms
+func SendSms(txt string, recipient string, origin SmsOrigin) bool {
+
+	resp, err := http.Get("https://login.parsgreen.com/UrlService/sendSMS.ashx?from=" + origin.From + "&to=" + recipient + "&&text=" + txt + "&signature=" + origin.ApiKey)
+	defer resp.Body.Close()
+	if err != nil {
+		// handle error
+		log.Println("Sending SMS to: " + recipient + " Failed 006 <=End")
+		return false
+	} else {
+		log.Println("SMS Sent to: " + recipient)
+		return true
+	}
+
+}
