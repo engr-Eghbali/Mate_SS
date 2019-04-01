@@ -3,22 +3,21 @@ package services
 import (
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/smtp"
+	"strconv"
+	"strings"
+	"time"
+
+	structs "github.com/engr-Eghbali/matePKG/basement"
+
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
-type MailOrigin struct {
-	From     string
-	Password string
-}
-
-type SmsOrigin struct {
-	From   string
-	ApiKey string
-}
-
 ////////////send mail
-func SendMail(body string, recipient string, origin MailOrigin) (er bool) {
+func SendMail(body string, recipient string, origin structs.MailOrigin) (er bool) {
 
 	msg := "From: " + origin.From + "\n" +
 		"To: " + recipient + "\n" +
@@ -41,7 +40,7 @@ func SendMail(body string, recipient string, origin MailOrigin) (er bool) {
 ////////////////////////////////////////////////////////
 
 ////////////sned sms
-func SendSms(txt string, recipient string, origin SmsOrigin) bool {
+func SendSms(txt string, recipient string, origin structs.SmsOrigin) bool {
 
 	resp, err := http.Get("https://login.parsgreen.com/UrlService/sendSMS.ashx?from=" + origin.From + "&to=" + recipient + "&&text=" + txt + "&signature=" + origin.ApiKey)
 	defer resp.Body.Close()
@@ -56,6 +55,61 @@ func SendSms(txt string, recipient string, origin SmsOrigin) bool {
 	} else {
 		log.Println("SMS Sent to: " + recipient)
 		return true
+	}
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+//////////// generate VC and save in vc table
+func CreateVcRecord(UID string, session *mgo.Session) (vcode string, stat bool) {
+
+	//generate
+	rand.Seed(time.Now().UnixNano())
+	vc := strconv.Itoa(100000 + rand.Intn(999999-100000))
+
+	VcRecord := structs.VcTable{ID: bson.NewObjectId(), UserID: UID, VC: vc}
+	collection := session.DB("bkbfbtpiza46rc3").C("loginRequests")
+	InsertErr := collection.Insert(&VcRecord)
+
+	if InsertErr != nil {
+		log.Println("Creating vc record failed:")
+		log.Println(InsertErr)
+		log.Println("<=End")
+		return "", false
+	} else {
+		return vc, true
+	}
+
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+////////initial user record
+func InitUser(id string, vc string, session *mgo.Session) (objid bson.ObjectId, result bool) {
+
+	var InsertErr error
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	if strings.Contains(id, "@") {
+		NewUser := structs.User{ID: bson.NewObjectId(), Name: "", Phone: "", Email: id, Vc: vc, Status: 1, Avatar: "pic url here", FriendList: nil, Meetings: nil, Requests: nil}
+		objid = NewUser.ID
+		InsertErr = collection.Insert(&NewUser)
+	} else {
+		NewUser := structs.User{ID: bson.NewObjectId(), Name: "", Phone: id, Email: "", Vc: vc, Status: 1, Avatar: "pic url here", FriendList: nil, Meetings: nil, Requests: nil}
+		objid = NewUser.ID
+		InsertErr = collection.Insert(&NewUser)
+	}
+
+	if InsertErr != nil {
+		log.Println("Init User failed")
+		log.Println(InsertErr)
+		log.Println("<=End")
+		return objid, false
+	} else {
+		return objid, true
 	}
 
 }

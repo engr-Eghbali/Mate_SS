@@ -3,12 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	services "github.com/engr-Eghbali/matePKG"
 
@@ -163,27 +160,80 @@ func determineListenAddress() (string, error) {
 //}
 //
 /////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+
+///////////username submition/changing handling
+func UserNameChange(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+
+	} else {
+
+		r.ParseForm()
+		VC := r.Form["vc"][0]
+		ID := r.Form["ID"][0]
+		UserName := r.Form["username"][0]
+
+		var temp = new(structs.User)
+		collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+		FindErr := collection.Find(bson.M{"name": UserName}).One(&temp)
+
+		if FindErr == nil {
+			fmt.Fprintln(w, "reserved")
+			return
+		}
+
+		if FindErr == mgo.ErrNotFound {
+
+			if strings.Contains(ID, "@") {
+				FindErr = collection.Find(bson.M{"email": ID}).One(&temp)
+			} else {
+				FindErr = collection.Find(bson.M{"phone": ID}).One(&temp)
+			}
+
+			if temp.Vc == VC {
+
+				UpdateErr := collection.Update(bson.M{"_id": temp.ID}, bson.M{"$set": bson.M{"name": UserName}})
+
+				if UpdateErr != nil {
+					fmt.Fprintln(w, "0")
+					return
+				} else {
+					fmt.Fprintln(w, "1")
+					return
+				}
+
+			} else {
+				fmt.Fprintln(w, "-1")
+				return
+			}
+
+		}
+
+	}
+
+}
+
+////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 
 ///// Generate/save/send verification code to client Email
 func SendVerificationMail(mail string) (err bool) {
 
-	//generate
-	rand.Seed(time.Now().UnixNano())
-	vc := strconv.Itoa(100000 + rand.Intn(999999-100000))
-
-	//save
-	NewUser := structs.User{ID: bson.NewObjectId(), Name: "none", Phone: "none", Email: mail, Vc: vc, Status: 0, FriendList: nil, Meetings: nil, Requests: nil}
-	collection := session.DB("bkbfbtpiza46rc3").C("users")
-	InsertErr := collection.Insert(&NewUser)
-	if InsertErr != nil {
-		log.Println("=>User Submition Failed Cause Of DB Insert Error:001")
-		log.Println(InsertErr)
-		log.Println("End <=001")
+	//generate/save to vc table
+	vc, result := services.CreateVcRecord(mail, session)
+	if result == false {
+		log.Println("sending verification failed cause of VC service failur")
 		return false
 	}
 
 	//send
-	origin := services.MailOrigin{From: "whereismymate.app@gmail.com", Password: "Wakeuptrane2sfc$"}
+	origin := structs.MailOrigin{From: "whereismymate.app@gmail.com", Password: "Wakeuptrane2sfc$"}
 	MailErr := services.SendMail(vc, mail, origin)
 	if MailErr != true {
 		log.Println("User Submition Failed Cause Of SMTP Error:002")
@@ -202,24 +252,16 @@ func SendVerificationMail(mail string) (err bool) {
 //////generate/save/send verification code to client Phone No
 func SendVerificationSMS(phone string) bool {
 
-	//generate
-	rand.Seed(time.Now().UnixNano())
-	vc := strconv.Itoa(100000 + rand.Intn(999999-100000))
-
-	//save
-	NewUser := structs.User{ID: bson.NewObjectId(), Name: "none", Phone: "none", Email: "", Vc: vc, Status: 0, FriendList: nil, Meetings: nil, Requests: nil}
-	collection := session.DB("bkbfbtpiza46rc3").C("users")
-	InsertErr := collection.Insert(&NewUser)
-	if InsertErr != nil {
-		log.Println("=>User Submition Failed Cause Of DB Insert Error:007")
-		log.Println(InsertErr)
-		log.Println("End <=007")
+	//generate/save to vc table
+	vc, result := services.CreateVcRecord(phone, session)
+	if result == false {
+		log.Println("sending verification failed cause of VC service failur")
 		return false
 	}
 
 	//send
-	origin := services.SmsOrigin{From: "10001398", ApiKey: "ED09D0D7-5FBA-43A2-8B9D-F0AE79666B52"}
-	SmsErr := services.SendSms(vc, phone, origin)
+	origin := structs.SmsOrigin{From: "10001398", ApiKey: "ED09D0D7-5FBA-43A2-8B9D-F0AE79666B52"}
+	SmsErr := services.SendSms("verification code is "+vc, phone, origin)
 	if SmsErr != true {
 		log.Println("User Submition Failed Cause Of SMS service Error:008")
 		log.Println(SmsErr)
@@ -284,39 +326,32 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		data := r.Form["ID"][0]
 		vc := r.Form["vc"][0]
-		collection := session.DB("bkbfbtpiza46rc3").C("users")
-		temp := new(structs.User)
+		collection := session.DB("bkbfbtpiza46rc3").C("loginRequests")
+		recordTemp := new(structs.VcTable)
 		var FindErr error
 
-		if strings.Contains(data, "@") {
-			FindErr = collection.Find(bson.M{"email": data}).One(&temp)
+		FindErr = collection.Find(bson.M{"userid": data}).One(&recordTemp)
 
-		} else {
-			FindErr = collection.Find(bson.M{"phone": data}).One(&temp)
+		if FindErr == nil {
+			if recordTemp.VC == vc {
+				objid, result := services.InitUser(data, vc, session)
 
-		}
+				if result == true {
+					fmt.Fprintln(w, objid.Hex())
+				} else {
+					log.Println("user verification failed due to inituser service failur:")
+					log.Println(data)
+					log.Println("<=End")
+					fmt.Fprintln(w, "0")
 
-		if FindErr == mgo.ErrNotFound {
-			fmt.Fprintln(w, "-1")
-			log.Println("VC Canceled by Not Found Error due to bad request maybe:004")
-			log.Println(FindErr)
-			log.Println("<=End004")
-			return
-		}
-
-		if temp.Vc == vc {
-			err := collection.Update(bson.M{"_id": temp.ID}, bson.M{"$set": bson.M{"status": 1}})
-
-			if err != nil {
-				fmt.Fprintln(w, "0")
-				log.Println("VC Canceled due to DB error:005")
-				log.Println(err)
-				log.Println("<=End005")
+				}
 			} else {
-				fmt.Fprintln(w, "1")
+				fmt.Fprintln(w, "-1")
 			}
-
 		} else {
+			log.Println("user verification failed due to VC table failur")
+			log.Println(FindErr)
+			log.Println("<=End")
 			fmt.Fprintln(w, "0")
 		}
 
@@ -391,6 +426,7 @@ func main() {
 	//Routing
 	http.HandleFunc("/Auth", Authenticator)
 	http.HandleFunc("/Verify", UserVerify)
+	http.HandleFunc("/UserName", UserNameChange)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
