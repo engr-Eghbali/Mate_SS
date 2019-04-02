@@ -261,7 +261,7 @@ func SendVerificationSMS(phone string) bool {
 
 	//send
 	origin := structs.SmsOrigin{From: "10001398", ApiKey: "ED09D0D7-5FBA-43A2-8B9D-F0AE79666B52"}
-	SmsErr := services.SendSms("verification code is "+vc, phone, origin)
+	SmsErr := services.SendSms(vc, phone, origin)
 	if SmsErr != true {
 		log.Println("User Submition Failed Cause Of SMS service Error:008")
 		log.Println(SmsErr)
