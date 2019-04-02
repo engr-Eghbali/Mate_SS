@@ -114,3 +114,30 @@ func InitUser(id string, vc string, session *mgo.Session) (objid bson.ObjectId, 
 	}
 
 }
+
+////////////////////////////////////////////////////////////////
+func LoginUser(userId string, vc string, session *mgo.Session) (res bool) {
+
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+	var tempUser structs.User
+	var UpdateErr error
+
+	if strings.Contains(userId, "@") {
+
+		UpdateErr = collection.Update(bson.M{"email": userId}, bson.M{"$set": bson.M{"vc": vc, "status": 1}})
+	} else {
+
+		UpdateErr = collection.Update(bson.M{"phone": userId}, bson.M{"$set": bson.M{"vc": vc, "status": 1}})
+	}
+
+	if UpdateErr != nil {
+		log.Println("login user failed due to update service failur:")
+		log.Println(UpdateErr)
+		log.Println("user: " + userId)
+		log.Println("<=End")
+		return false
+	} else {
+		return true
+	}
+
+}

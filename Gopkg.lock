@@ -3,14 +3,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5f0143afd2072c094fd3bf0cb7c0d03d705ab5eb8f4edb916ff7b4c8ad86dd66"
+  digest = "1:7925ca2c77328ae08ef9936c22d52da6fa95d360e45c3b8c9c8c6f8b2c97140b"
   name = "github.com/engr-Eghbali/matePKG"
   packages = [
     ".",
     "basement",
   ]
   pruneopts = "UT"
-  revision = "d5014009f5226658aecba8293b36717e6af0152c"
+  revision = "b15b7e8174cdde599ce126e2023eddf3b6eafb73"
 
 [[projects]]
   branch = "v2"

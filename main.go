@@ -329,24 +329,56 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 		collection := session.DB("bkbfbtpiza46rc3").C("loginRequests")
 		recordTemp := new(structs.VcTable)
 		var FindErr error
+		var result bool
+		var objid bson.ObjectId
 
 		FindErr = collection.Find(bson.M{"userid": data}).One(&recordTemp)
 
 		if FindErr == nil {
 			if recordTemp.VC == vc {
-				objid, result := services.InitUser(data, vc, session)
+
+				collection = session.DB("bkbfbtpiza46rc3").C("users")
+				var usrTemp structs.User
+
+				if strings.Contains(data, "@") {
+					FindErr = collection.Find(bson.M{"email": data}).One(&usrTemp)
+				} else {
+					FindErr = collection.Find(bson.M{"phone": data}).One(&usrTemp)
+				}
+
+				///if user doesnt exist then init new one
+				if FindErr == mgo.ErrNotFound {
+					objid, result = services.InitUser(data, vc, session)
+				}
+
+				//if exist then login it
+				if FindErr == nil {
+					result = services.LoginUser(data, vc, session)
+					objid = usrTemp.ID
+
+				}
+
+				// if error
+				if FindErr != nil && FindErr != mgo.ErrNotFound {
+					log.Println("user verification failed due to DB query failur")
+					log.Println(FindErr)
+					log.Println("user ID:")
+					log.Println(data)
+					log.Println("<=End")
+					fmt.Fprintln(w, "0")
+				}
 
 				if result == true {
 					fmt.Fprintln(w, objid.Hex())
 				} else {
-					log.Println("user verification failed due to inituser service failur:")
+					log.Println("user verification failed due to inituser/loginuser service failur:")
 					log.Println(data)
 					log.Println("<=End")
 					fmt.Fprintln(w, "0")
-
 				}
+
 			} else {
-				fmt.Fprintln(w, "-1 *"+recordTemp.VC+"* "+vc)
+				fmt.Fprintln(w, "-1")
 			}
 		} else {
 			log.Println("user verification failed due to VC table failur")
