@@ -346,7 +346,7 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 
 				}
 			} else {
-				fmt.Fprintln(w, "-1")
+				fmt.Fprintln(w, "-1 *"+recordTemp.VC+"* "+vc)
 			}
 		} else {
 			log.Println("user verification failed due to VC table failur")
