@@ -71,6 +71,7 @@ func CreateVcRecord(UID string, session *mgo.Session) (vcode string, stat bool) 
 
 	VcRecord := structs.VcTable{ID: bson.NewObjectId(), UserID: UID, VC: vc}
 	collection := session.DB("bkbfbtpiza46rc3").C("loginRequests")
+	collection.Remove(bson.M{"userid": UID}) //remove previous VC
 	InsertErr := collection.Insert(&VcRecord)
 
 	if InsertErr != nil {
