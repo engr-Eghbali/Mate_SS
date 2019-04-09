@@ -54,3 +54,10 @@ type SmsOrigin struct {
 	From   string
 	ApiKey string
 }
+
+type UserCache struct {
+	Geo        string          `json:geo`
+	Vc         string          `json:vc`
+	FriendList []bson.ObjectId `json:friendlist`
+	Visibility bool            `json:visibility`
+}

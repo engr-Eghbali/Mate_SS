@@ -3,14 +3,30 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7925ca2c77328ae08ef9936c22d52da6fa95d360e45c3b8c9c8c6f8b2c97140b"
+  digest = "1:91fc166d6cc5d586bed1b073ce22a89300c7515a87723306e9b2489831611b3b"
   name = "github.com/engr-Eghbali/matePKG"
   packages = [
     ".",
     "basement",
   ]
   pruneopts = "UT"
-  revision = "b15b7e8174cdde599ce126e2023eddf3b6eafb73"
+  revision = "5e159dc5a784121dc1e5445b55c9526369e8cbbc"
+
+[[projects]]
+  digest = "1:33082c63746b464db3d1c2c07a1396d860484d97fe857ef9e8668a9b406db09f"
+  name = "github.com/go-redis/redis"
+  packages = [
+    ".",
+    "internal",
+    "internal/consistenthash",
+    "internal/hashtag",
+    "internal/pool",
+    "internal/proto",
+    "internal/util",
+  ]
+  pruneopts = "UT"
+  revision = "d22fde8721cc915a55aeb6b00944a76a92bfeb6e"
+  version = "v6.15.2"
 
 [[projects]]
   branch = "v2"
@@ -32,6 +48,7 @@
   input-imports = [
     "github.com/engr-Eghbali/matePKG",
     "github.com/engr-Eghbali/matePKG/basement",
+    "github.com/go-redis/redis",
     "gopkg.in/mgo.v2",
     "gopkg.in/mgo.v2/bson",
   ]

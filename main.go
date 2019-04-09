@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-redis/redis"
+
 	services "github.com/engr-Eghbali/matePKG"
 
 	structs "github.com/engr-Eghbali/matePKG/basement"
@@ -19,6 +21,7 @@ import (
 ///////!!! GLOBAL VARS !!!!!!/////////
 
 var session *mgo.Session
+var redisClient *redis.Client
 
 //////////////port detemine
 func determineListenAddress() (string, error) {
@@ -162,6 +165,69 @@ func determineListenAddress() (string, error) {
 /////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
+//////////////// update users geometrical and Maps info
+func GodsEye(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	} else {
+
+		r.ParseForm()
+		VC := r.Form["vc"][0]
+		ID := r.Form["id"][0] //objId
+		Geo := r.Form["geo"][0]
+		var Visible bool
+		if r.Form["visible"][0] == "0" {
+			Visible = false
+		} else {
+			Visible = true
+		}
+
+		user, err := services.CacheRetrieve(redisClient, ID)
+
+		if err != nil || user[0].Vc != VC {
+			fmt.Fprintln(w, "-1")
+			return
+		}
+
+		//update user info
+		TempUser := structs.UserCache{Geo: Geo, Vc: user[0].Vc, FriendList: user[0].FriendList, Visibility: Visible}
+		flag := services.SendToCache(ID, TempUser, redisClient)
+		if flag == false {
+			log.Println("update cache failed due to SendToCache failur")
+		}
+
+		///iterate friends
+		var friendKeys []string
+		for _, id := range user[0].FriendList {
+			friendKeys = append(friendKeys, id.Hex())
+		}
+		Friends, ferr := services.CacheRetrieve(redisClient, friendKeys...)
+		if ferr != nil {
+			fmt.Fprintln(w, "0")
+			return
+		}
+
+		///form the answer
+		var response string = "["
+		for i, f := range Friends {
+			if f.Visibility == true {
+				response = response + "{\"ID\":\"" + friendKeys[i] + "\", \"Geo\":\"" + f.Geo + "\"},"
+			} else {
+				response = response + "{\"ID\":\"" + friendKeys[i] + "\", \"Geo\":\"0\"},"
+			}
+		}
+		response = strings.TrimSuffix(response, ",") + "]"
+		fmt.Fprintln(w, response)
+
+	}
+
+}
+
 ///////////username submition/changing handling
 func UserNameChange(w http.ResponseWriter, r *http.Request) {
 
@@ -170,6 +236,7 @@ func UserNameChange(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
 		fmt.Fprintln(w, "bad request")
+		return
 
 	} else {
 
@@ -274,7 +341,7 @@ func SendVerificationSMS(phone string) bool {
 }
 
 ////////// Handle submit function
-func SubmitReq(w http.ResponseWriter, data string) {
+func SubLoginReq(w http.ResponseWriter, data string) {
 
 	w.Header().Set("Content-Type", "text/javascript")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -417,8 +484,8 @@ func Authenticator(w http.ResponseWriter, r *http.Request) {
 		FindErr = collection.Find(bson.M{"phone": data}).One(&temp)
 	}
 
-	if FindErr == mgo.ErrNotFound {
-		SubmitReq(w, data)
+	if FindErr == mgo.ErrNotFound || FindErr == nil {
+		SubLoginReq(w, data)
 		return
 	}
 
@@ -430,9 +497,6 @@ func Authenticator(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "0")
 		return
 	}
-
-	//if temp.Status == 0 { LoginUser() }
-	//if temp.Status == 1 { LogedinUserHandler()}
 
 }
 
@@ -459,6 +523,7 @@ func main() {
 	http.HandleFunc("/Auth", Authenticator)
 	http.HandleFunc("/Verify", UserVerify)
 	http.HandleFunc("/UserName", UserNameChange)
+	http.HandleFunc("/EyeOfProvidence", GodsEye)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
