@@ -518,6 +518,12 @@ func main() {
 	if DBerr != nil {
 		log.Fatal(DBerr)
 	}
+	//redis client init
+	redisClient = redis.NewClient(&redis.Options{
+		Addr:     "redis-13657.c135.eu-central-1-1.ec2.cloud.redislabs.com:13657",
+		Password: "tlqTsgjgzDOqZb2bYjHAMCcC4uh9U49o", // no password set
+		DB:       0,                                  // use default DB
+	})
 
 	//Routing
 	http.HandleFunc("/Auth", Authenticator)
