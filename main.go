@@ -228,6 +228,135 @@ func GodsEye(w http.ResponseWriter, r *http.Request) {
 
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+////handle and deliver friend request to another user
+func SendFriendReq(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	r.ParseForm()
+	ID := r.Form["id"][0] //objId
+	Vc := r.Form["vc"][0]
+	Frequest := r.Form["frequest"][0]
+	var friend, user structs.User
+
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+	findErr := collection.Find(bson.M{"name": Frequest}).One(&friend)
+
+	if findErr == mgo.ErrNotFound {
+		fmt.Fprintln(w, "0")
+		return
+	}
+
+	findErr = collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+	if findErr != nil {
+		fmt.Fprintln(w, "-1")
+		log.Println("friend request failur due to query error:")
+		log.Println(findErr)
+		log.Println("<=End")
+		return
+	}
+
+	if user.Vc != Vc {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	for _, r := range friend.Requests {
+		if r.SenderName == user.Name {
+			fmt.Fprintln(w, "sent befor")
+			return
+		}
+	}
+
+	Reqlist := append(friend.Requests, structs.Request{SenderName: user.Name, SenderPic: user.Avatar})
+	updateErr := collection.UpdateId(friend.ID, bson.M{"$set": bson.M{"requests": Reqlist}})
+
+	if updateErr != nil {
+		fmt.Fprintln(w, "-1")
+		log.Println("user F-Request failed due to query update error:")
+		log.Println(updateErr)
+		log.Println("<=End")
+		return
+	}
+
+	fmt.Fprintln(w, "1")
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////handle accepting friend request and make both friends
+func AcceptFrequest(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	r.ParseForm()
+	ID := r.Form["id"][0] //objId
+	VC := r.Form["vc"][0]
+	Fname := r.Form["fname"][0]
+
+	var user, friend structs.User
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	Err1 := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+	Err2 := collection.Find(bson.M{"name": Fname}).One(&friend)
+
+	if Err1 != nil || Err2 != nil || user.Vc != VC {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	var ReqList []structs.Request
+	var Flist []bson.ObjectId
+	for i, r := range user.Requests {
+		if r.SenderName == friend.Name {
+			ReqList = append(user.Requests[:i], user.Requests[i+1:]...)
+			break
+		}
+	}
+	Flist = append(user.FriendList, friend.ID)
+	Err1 = collection.UpdateId(user.ID, bson.M{"$set": bson.M{"friendlist": Flist, "requests": ReqList}})
+	if Err1 != nil {
+		fmt.Fprintln(w, "0")
+		log.Println("accepting request failed due to update query error:")
+		log.Println(Err1)
+		log.Println("<=End")
+		return
+	}
+
+	Flist = append(friend.FriendList, user.ID)
+	Err2 = collection.UpdateId(friend.ID, bson.M{"$set": bson.M{"friendlist": Flist}})
+
+	if Err2 != nil {
+		fmt.Fprintln(w, "0")
+		log.Println("accepting request failed due to update query error:")
+		log.Println(Err1)
+		log.Println("<=End")
+		collection.UpdateId(user.ID, bson.M{"$set": bson.M{"friendlist": user.FriendList, "requests": user.Requests}})
+		return
+	}
+
+	/////then update redis cache
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////username submition/changing handling
 func UserNameChange(w http.ResponseWriter, r *http.Request) {
 
@@ -242,7 +371,7 @@ func UserNameChange(w http.ResponseWriter, r *http.Request) {
 
 		r.ParseForm()
 		VC := r.Form["vc"][0]
-		ID := r.Form["ID"][0]
+		ID := r.Form["ID"][0] //mail or phone
 		UserName := r.Form["username"][0]
 
 		var temp = new(structs.User)
@@ -265,7 +394,7 @@ func UserNameChange(w http.ResponseWriter, r *http.Request) {
 
 			if temp.Vc == VC {
 
-				UpdateErr := collection.Update(bson.M{"_id": temp.ID}, bson.M{"$set": bson.M{"name": UserName}})
+				UpdateErr := collection.UpdateId(temp.ID, bson.M{"$set": bson.M{"name": UserName}})
 
 				if UpdateErr != nil {
 					fmt.Fprintln(w, "0")
@@ -352,7 +481,7 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		r.ParseForm()
-		data := r.Form["ID"][0]
+		data := r.Form["ID"][0] //mail or phone
 		vc := r.Form["vc"][0]
 		collection := session.DB("bkbfbtpiza46rc3").C("loginRequests")
 		recordTemp := new(structs.VcTable)
@@ -422,7 +551,7 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-//// login or submit? make sure and bind right fnction....
+//// call verification methods first (+ip limitation must add later+)
 func Authenticator(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/javascript")
@@ -460,6 +589,12 @@ func Authenticator(w http.ResponseWriter, r *http.Request) {
 
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////
+////////////////////////////////////////////////////
+////////////////////////////////////////////////
 func main() {
 
 	///main vars
@@ -490,6 +625,8 @@ func main() {
 	http.HandleFunc("/Verify", UserVerify)
 	http.HandleFunc("/UserName", UserNameChange)
 	http.HandleFunc("/EyeOfProvidence", GodsEye)
+	http.HandleFunc("/Frequest", SendFriendReq)
+	http.HandleFunc("/AccFrequest", AcceptFrequest)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
