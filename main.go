@@ -340,46 +340,7 @@ func SendVerificationSMS(phone string) bool {
 
 }
 
-////////// Handle submit function
-func SubLoginReq(w http.ResponseWriter, data string) {
-
-	w.Header().Set("Content-Type", "text/javascript")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	if strings.Contains(data, "@") {
-
-		err := SendVerificationMail(data)
-
-		if err != true {
-			fmt.Fprintf(w, "0")
-			return
-		} else {
-			fmt.Fprintf(w, "1")
-			return
-		}
-	} else {
-
-		err := SendVerificationSMS(data)
-		if err != true {
-			fmt.Fprintf(w, "0")
-			return
-		} else {
-			fmt.Fprintf(w, "1")
-			return
-		}
-
-	}
-
-	///// handle confirm code by SMS
-	//	if mORp =="p"{
-	//	}
-
-}
-
-///////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
-
-///////verify user by verification code
+///////verify user by verification code and then login or init user methods will call
 func UserVerify(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/javascript")
@@ -461,7 +422,7 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-//// login or submit? make sure....
+//// login or submit? make sure and bind right fnction....
 func Authenticator(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/javascript")
@@ -474,28 +435,27 @@ func Authenticator(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm()
 	data := r.Form["data"][0]
-	collection := session.DB("bkbfbtpiza46rc3").C("users")
-	temp := new(structs.User)
-	var FindErr error
 
 	if strings.Contains(data, "@") {
-		FindErr = collection.Find(bson.M{"email": data}).One(&temp)
+
+		err := SendVerificationMail(data)
+		if err != true {
+			fmt.Fprintf(w, "0")
+			return
+		} else {
+			fmt.Fprintf(w, "1")
+			return
+		}
+
 	} else {
-		FindErr = collection.Find(bson.M{"phone": data}).One(&temp)
-	}
-
-	if FindErr == mgo.ErrNotFound || FindErr == nil {
-		SubLoginReq(w, data)
-		return
-	}
-
-	if FindErr != nil {
-
-		log.Println("=>User Submition/Login Canceled Cause of DB Find Query Err:003")
-		log.Println(FindErr)
-		log.Println("End<=003")
-		fmt.Fprintln(w, "0")
-		return
+		err := SendVerificationSMS(data)
+		if err != true {
+			fmt.Fprintf(w, "0")
+			return
+		} else {
+			fmt.Fprintf(w, "1")
+			return
+		}
 	}
 
 }

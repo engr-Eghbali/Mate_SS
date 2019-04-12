@@ -19,9 +19,8 @@ type Location struct {
 }
 
 type Request struct {
-	SenderID   bson.ObjectId `json:senderid`
-	SenderName string        `json:sendername`
-	SenderPic  string        `json:sendername`
+	SenderName string `json:sendername`
+	SenderPic  string `json:sendername`
 }
 
 type Meet struct {
