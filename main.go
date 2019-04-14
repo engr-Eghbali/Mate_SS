@@ -352,11 +352,56 @@ func AcceptFrequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/////then update redis cache
+	var userCache, friendCache structs.UserCache
+	userTMP, cacheErr1 := services.CacheRetrieve(redisClient, user.ID.Hex())
+	friendTMP, cacheErr2 := services.CacheRetrieve(redisClient, friend.ID.Hex())
+
+	if cacheErr1 != nil || cacheErr2 != nil {
+		fmt.Fprintln(w, "0")
+		log.Println("user accept frequest set failed due to cache retrieve service error:")
+		log.Println(cacheErr1)
+		log.Println(cacheErr2)
+		log.Println("<=End")
+		return
+	}
+
+	userCache = structs.UserCache{Geo: userTMP[0].Geo, Vc: userTMP[0].Vc, FriendList: append(userTMP[0].FriendList, friend.ID), Visibility: userTMP[0].Visibility}
+	friendCache = structs.UserCache{Geo: friendTMP[0].Geo, Vc: friendTMP[0].Vc, FriendList: append(friendTMP[0].FriendList, friend.ID), Visibility: friendTMP[0].Visibility}
+
+	setCacheErr1 := services.SendToCache(user.ID.Hex(), userCache, redisClient)
+	setCacheErr2 := services.SendToCache(friend.ID.Hex(), friendCache, redisClient)
+
+	if setCacheErr1 != true || setCacheErr2 != true {
+		fmt.Fprintln(w, "0")
+		log.Println("user accept f-request set failed due to cache set service error:")
+		log.Println(setCacheErr1)
+		log.Println(setCacheErr2)
+		log.Println("<=End")
+		return
+	}
+	fmt.Fprintln(w, "1")
 
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////unfriend function
+func Unfriend(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+	r.ParseForm()
+	ID := r.Form["id"][0]
+	VC := r.Form["vc"][0]
+	Target := r.Form["target"][0] //username for unfriend
+
+}
+
 ///////////username submition/changing handling
 func UserNameChange(w http.ResponseWriter, r *http.Request) {
 
@@ -627,6 +672,7 @@ func main() {
 	http.HandleFunc("/EyeOfProvidence", GodsEye)
 	http.HandleFunc("/Frequest", SendFriendReq)
 	http.HandleFunc("/AccFrequest", AcceptFrequest)
+	http.HandleFunc("/Unfriend", Unfriend)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
