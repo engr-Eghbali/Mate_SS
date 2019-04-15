@@ -400,7 +400,48 @@ func Unfriend(w http.ResponseWriter, r *http.Request) {
 	VC := r.Form["vc"][0]
 	Target := r.Form["target"][0] //username for unfriend
 
+	var user, friend structs.User
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	findErr1 := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+	findErr2 := collection.Find(bson.M{"name": Target}).One(&friend)
+
+	if findErr1 != nil || findErr2 != nil || user.Vc != VC {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	var NewFriendList1, NewFriendList2 []bson.ObjectId
+	for i, f := range user.FriendList {
+		if f == friend.ID {
+			NewFriendList1 = append(user.FriendList[:i], user.FriendList[i+1:]...)
+			break
+		}
+	}
+	for i, f := range friend.FriendList {
+		if f == user.ID {
+			NewFriendList2 = append(friend.FriendList[:i], friend.FriendList[i+1:]...)
+			break
+		}
+	}
+
+	updateErr1 := collection.UpdateId(user.ID, bson.M{"$set": bson.M{"friendlist": NewFriendList1}})
+	updateErr2 := collection.UpdateId(friend.ID, bson.M{"$set": bson.M{"friendlist": NewFriendList2}})
+
+	if updateErr1 != nil || updateErr2 != nil {
+		fmt.Fprintln(w, "0")
+		log.Println("user unfriend failed due to update query failur:")
+		log.Println(updateErr1)
+		log.Println(updateErr2)
+		log.Println("<=End")
+		return
+	}
+	fmt.Fprintln(w, "1")
+
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////username submition/changing handling
 func UserNameChange(w http.ResponseWriter, r *http.Request) {
