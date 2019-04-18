@@ -27,7 +27,7 @@ type Meet struct {
 	Title string    `json:title`
 	Time  time.Time `json:time`
 	Host  string    `json:host`
-	Crowd string    `json:crowd`
+	Crowd []string  `json:crowd`
 	Geo   Location  `json:location`
 }
 

@@ -231,6 +231,39 @@ func GodsEye(w http.ResponseWriter, r *http.Request) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+/////////////setup a meeting
+func SetMeeting(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+	r.ParseForm()
+	ID := r.Form["id"][0] //objId
+	Vc := r.Form["vc"][0]
+	Title := r.Form["title"][0]
+	Time := r.Form["time"][0]
+	Crowd := strings.Split(r.Form["crowd"][0], ",")
+	Geo := strings.Split(r.Form["geo"][0], ",")
+
+	var user structs.User
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+	findErr := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+
+	if findErr != nil || user.Vc != Vc {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	///foreach crowd,check with f-list and then push in
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 ////handle and deliver friend request to another user
 func SendFriendReq(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/javascript")
@@ -714,6 +747,7 @@ func main() {
 	http.HandleFunc("/Frequest", SendFriendReq)
 	http.HandleFunc("/AccFrequest", AcceptFrequest)
 	http.HandleFunc("/Unfriend", Unfriend)
+	http.HandleFunc("SetMeeting", SetMeeting)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
