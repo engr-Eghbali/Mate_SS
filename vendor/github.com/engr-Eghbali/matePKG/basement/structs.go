@@ -13,9 +13,8 @@ type VcTable struct {
 }
 
 type Location struct {
-	X   string `json:x`
-	Y   string `json:y`
-	Add string `json:add`
+	X string `json:x`
+	Y string `json:y`
 }
 
 type Request struct {

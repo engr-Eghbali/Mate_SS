@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis"
 
@@ -244,11 +245,12 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 	ID := r.Form["id"][0] //objId
 	Vc := r.Form["vc"][0]
 	Title := r.Form["title"][0]
-	Time := r.Form["time"][0]
+	Time, _ := time.Parse("2012-11-01 22:08:41", r.Form["time"][0])
 	Crowd := strings.Split(r.Form["crowd"][0], ",")
-	Geo := strings.Split(r.Form["geo"][0], ",")
+	Geo := structs.Location{X: strings.Split(r.Form["geo"][0], ",")[0], Y: strings.Split(r.Form["geo"][0], ",")[1]}
 
-	var user structs.User
+	var user, temp structs.User
+	var updateErr error
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
 	findErr := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
 
@@ -257,7 +259,86 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	///foreach crowd,check with f-list and then push in
+	newMeeting := structs.Meet{Title: Title, Time: Time, Host: user.Name, Crowd: Crowd, Geo: Geo}
+
+	updateErr = collection.UpdateId(bson.ObjectIdHex(ID), bson.M{"$set": bson.M{"meetings": append(user.Meetings, newMeeting)}})
+	if updateErr != nil {
+		fmt.Fprintln(w, "0")
+		log.Println("user set meeting failed: ")
+		log.Println(updateErr)
+		return
+	}
+
+	for _, personName := range Crowd {
+
+		findErr = collection.Find(bson.M{"name": personName}).One(&temp)
+
+		if findErr == nil {
+			for _, id := range temp.FriendList {
+				if id == bson.ObjectIdHex(ID) {
+					updateErr = collection.UpdateId(temp.ID, bson.M{"$set": bson.M{"meetings": append(temp.Meetings, newMeeting)}})
+					if updateErr != nil {
+						log.Println("invite member to meeting failed:")
+						log.Println(updateErr)
+						log.Println("trying again:")
+						updateErr = collection.UpdateId(temp.ID, bson.M{"$set": bson.M{"meetings": append(temp.Meetings, newMeeting)}})
+						log.Println(updateErr)
+					}
+					break
+				}
+			}
+		}
+
+	}
+
+	fmt.Fprintln(w, "1")
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////leave a meeting
+func LeaveMeeting(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	r.ParseForm()
+	ID := r.Form["id"][0] //objId
+	Vc := r.Form["vc"][0]
+	Title := r.Form["title"][0]
+	Host := r.Form["host"][0]
+
+	var user structs.User
+	var newMeetingList []structs.Meet
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+	findErr := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+
+	if findErr != nil || user.Vc != Vc {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	for i, meet := range user.Meetings {
+		if meet.Title == Title && meet.Host == Host {
+			newMeetingList = append(user.Meetings[:i], user.Meetings[i+1:]...)
+			break
+		}
+	}
+
+	updateErr := collection.UpdateId(bson.ObjectIdHex(ID), bson.M{"$set": bson.M{"meetings": newMeetingList}})
+	if updateErr != nil {
+		fmt.Fprintln(w, "0")
+		log.Println("user leave meeting method failed:")
+		log.Println(updateErr)
+		return
+	}
+	fmt.Fprintln(w, "1")
 
 }
 
@@ -748,6 +829,7 @@ func main() {
 	http.HandleFunc("/AccFrequest", AcceptFrequest)
 	http.HandleFunc("/Unfriend", Unfriend)
 	http.HandleFunc("SetMeeting", SetMeeting)
+	http.HandleFunc("/LeaveMeeting", LeaveMeeting)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
