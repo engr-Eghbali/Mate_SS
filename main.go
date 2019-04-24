@@ -705,7 +705,7 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 
 				///if user doesnt exist then init new one
 				if FindErr == mgo.ErrNotFound {
-					objid, result = services.InitUser(data, vc, session)
+					objid, result = services.InitUser(data, vc, session, redisClient)
 				}
 
 				//if exist then login it
