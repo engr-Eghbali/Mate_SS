@@ -145,11 +145,6 @@ func LoginUser(userId string, vc string, session *mgo.Session) (res bool) {
 		return false
 	} else {
 
-		init := structs.UserCache{Geo: "0,0", Vc: vc, FriendList: nil, Visibility: true}
-		if !SendToCache(objid.Hex(), init, clint) {
-			log.Println("redis init failed,trying again")
-			SendToCache(objid.Hex(), init, clint)
-		}
 		return true
 	}
 

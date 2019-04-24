@@ -712,6 +712,11 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 				if FindErr == nil {
 					result = services.LoginUser(data, vc, session)
 					objid = usrTemp.ID
+					init := structs.UserCache{Geo: "0,0", Vc: vc, FriendList: nil, Visibility: true}
+					if !services.SendToCache(objid.Hex(), init, redisClient) {
+						log.Println("redis init failed,trying again")
+						services.SendToCache(objid.Hex(), init, redisClient)
+					}
 
 				}
 
