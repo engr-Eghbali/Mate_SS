@@ -813,7 +813,7 @@ func HandShake(w http.ResponseWriter, r *http.Request) {
 
 	userCache, err := services.CacheRetrieve(redisClient, ID)
 
-	if err != nil {
+	if err != nil || userCache == nil {
 		log.Println("user handashaking failed:")
 		log.Println(err)
 		log.Println("<=END")
