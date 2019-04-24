@@ -791,6 +791,40 @@ func Authenticator(w http.ResponseWriter, r *http.Request) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// hand shaking func
+func HandShake(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	r.ParseForm()
+	ID := r.Form["id"][0]
+	VC := r.Form["vc"][0]
+
+	userCache, err := services.CacheRetrieve(redisClient, ID)
+
+	if err != nil {
+		log.Println("user handashaking failed:")
+		log.Println(err)
+		log.Println("<=END")
+		fmt.Fprintln(w, "0")
+		return
+	}
+
+	if userCache[0].Vc == VC {
+		fmt.Fprintln(w, "1")
+		return
+	} else {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+}
 
 /////////////////////////////////////////////////
 ////////////////////////////////////////////////////
@@ -830,6 +864,7 @@ func main() {
 	http.HandleFunc("/Unfriend", Unfriend)
 	http.HandleFunc("SetMeeting", SetMeeting)
 	http.HandleFunc("/LeaveMeeting", LeaveMeeting)
+	http.HandleFunc("/HandShake", HandShake)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
