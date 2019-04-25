@@ -578,10 +578,12 @@ func AvatarChange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	r.ParseForm()
-	VC := r.Form["vc"][0]
-	ID := r.Form["id"][0]
+	r.ParseMultipartForm(0)
+	defer r.MultipartForm.RemoveAll()
 	avatar, info, Ferr := r.FormFile("avatar")
+	VC := r.FormValue("vc")
+	ID := r.FormValue("id")
+
 	contentType := info.Header.Get("Content-Type")
 	log.Println(info)
 	log.Println(Ferr)
