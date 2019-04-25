@@ -612,7 +612,7 @@ func UserNameChange(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm()
 	VC := r.Form["vc"][0]
-	ID := r.Form["ID"][0]
+	ID := r.Form["id"][0]
 	UserName := r.Form["username"][0]
 
 	var temp = new(structs.User)
@@ -898,12 +898,12 @@ func main() {
 	http.HandleFunc("/Auth", Authenticator)
 	http.HandleFunc("/Verify", UserVerify)
 	http.HandleFunc("/UserName", UserNameChange)
-	http.HandleFunc("Avatar", AvatarChange)
+	http.HandleFunc("/Avatar", AvatarChange)
 	http.HandleFunc("/EyeOfProvidence", GodsEye)
 	http.HandleFunc("/Frequest", SendFriendReq)
 	http.HandleFunc("/AccFrequest", AcceptFrequest)
 	http.HandleFunc("/Unfriend", Unfriend)
-	http.HandleFunc("SetMeeting", SetMeeting)
+	http.HandleFunc("/SetMeeting", SetMeeting)
 	http.HandleFunc("/LeaveMeeting", LeaveMeeting)
 	http.HandleFunc("/HandShake", HandShake)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
