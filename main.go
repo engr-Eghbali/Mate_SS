@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
+	"image"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -23,6 +27,13 @@ import (
 
 var session *mgo.Session
 var redisClient *redis.Client
+
+type Image struct {
+	Filename    string
+	ContentType string
+	Data        []byte
+	Size        int
+}
 
 //////////////port detemine
 func determineListenAddress() (string, error) {
@@ -570,19 +581,55 @@ func AvatarChange(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	VC := r.Form["vc"][0]
 	ID := r.Form["id"][0]
-	avatar := r.Form["avatar"][0]
+	avatar, info, Ferr := r.FormFile("avatar")
+	contentType := info.Header.Get("Content-Type")
+	log.Println(info)
+	log.Println(Ferr)
 
 	var temp = new(structs.User)
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
 
 	FindErr := collection.FindId(bson.ObjectIdHex(ID)).One(&temp)
 
-	if FindErr != nil || temp.Vc != VC {
+	if FindErr != nil || temp.Vc != VC || Ferr != nil /*|| contentType != "image/png"*/ {
 		fmt.Fprintln(w, "-1")
 		return
 	}
 
-	updateErr := collection.UpdateId(temp.ID, bson.M{"$set": bson.M{"avatar": avatar}})
+	//
+	///////////read image
+	imageBytes, err := ioutil.ReadAll(avatar)
+
+	if err != nil {
+		fmt.Fprintln(w, "0")
+		log.Println("reading image file failed:")
+		log.Println(err)
+		log.Println("<=END")
+		return
+	}
+
+	_, _, err = image.Decode(bytes.NewReader(imageBytes))
+
+	if err != nil {
+		fmt.Fprintln(w, "0")
+		log.Println("reading image file failed:")
+		log.Println(err)
+		log.Println("<=END")
+	}
+
+	i := Image{
+		Filename:    info.Filename,
+		ContentType: contentType,
+		Data:        imageBytes,
+		Size:        len(imageBytes),
+	}
+	///
+	/////convert to base64
+	b64Avatar := fmt.Sprintf("data:%s;base64,%s", i.ContentType, base64.StdEncoding.EncodeToString(i.Data))
+
+	////////////////////////////////
+	////////////////////////////////
+	updateErr := collection.UpdateId(temp.ID, bson.M{"$set": bson.M{"avatar": b64Avatar}})
 
 	if updateErr != nil {
 		fmt.Fprintln(w, 0)
