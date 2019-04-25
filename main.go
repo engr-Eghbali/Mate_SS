@@ -614,7 +614,7 @@ func AvatarChange(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		fmt.Fprintln(w, "0")
-		log.Println("reading image file failed:")
+		log.Println("decode image file failed:")
 		log.Println(err)
 		log.Println("<=END")
 	}
