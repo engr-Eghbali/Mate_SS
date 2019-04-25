@@ -557,6 +557,48 @@ func Unfriend(w http.ResponseWriter, r *http.Request) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+///////////change avatar request handler
+func AvatarChange(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	r.ParseForm()
+	VC := r.Form["vc"][0]
+	ID := r.Form["id"][0]
+	avatar := r.Form["avatar"][0]
+
+	var temp = new(structs.User)
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	FindErr := collection.FindId(bson.ObjectIdHex(ID)).One(&temp)
+
+	if FindErr != nil || temp.Vc != VC {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	updateErr := collection.UpdateId(temp.ID, bson.M{"$set": bson.M{"avatar": avatar}})
+
+	if updateErr != nil {
+		fmt.Fprintln(w, 0)
+		log.Println("user change avatar failed:")
+		log.Println(updateErr)
+		log.Println("<=END")
+		return
+	}
+	fmt.Fprintln(w, "1")
+	return
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
 ///////////username submition/changing handling
 func UserNameChange(w http.ResponseWriter, r *http.Request) {
 
@@ -566,49 +608,42 @@ func UserNameChange(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		fmt.Fprintln(w, "bad request")
 		return
+	}
 
-	} else {
+	r.ParseForm()
+	VC := r.Form["vc"][0]
+	ID := r.Form["ID"][0]
+	UserName := r.Form["username"][0]
 
-		r.ParseForm()
-		VC := r.Form["vc"][0]
-		ID := r.Form["ID"][0] //mail or phone
-		UserName := r.Form["username"][0]
+	var temp = new(structs.User)
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
 
-		var temp = new(structs.User)
-		collection := session.DB("bkbfbtpiza46rc3").C("users")
+	FindErr := collection.Find(bson.M{"name": UserName}).One(&temp)
 
-		FindErr := collection.Find(bson.M{"name": UserName}).One(&temp)
+	if FindErr == nil {
+		fmt.Fprintln(w, "reserved")
+		return
+	}
 
-		if FindErr == nil {
-			fmt.Fprintln(w, "reserved")
-			return
-		}
+	if FindErr == mgo.ErrNotFound {
 
-		if FindErr == mgo.ErrNotFound {
+		FindErr = collection.FindId(bson.ObjectIdHex(ID)).One(&temp)
 
-			if strings.Contains(ID, "@") {
-				FindErr = collection.Find(bson.M{"email": ID}).One(&temp)
+		if temp.Vc == VC {
+
+			UpdateErr := collection.UpdateId(temp.ID, bson.M{"$set": bson.M{"name": UserName}})
+
+			if UpdateErr != nil {
+				fmt.Fprintln(w, "0")
+				return
 			} else {
-				FindErr = collection.Find(bson.M{"phone": ID}).One(&temp)
-			}
-
-			if temp.Vc == VC {
-
-				UpdateErr := collection.UpdateId(temp.ID, bson.M{"$set": bson.M{"name": UserName}})
-
-				if UpdateErr != nil {
-					fmt.Fprintln(w, "0")
-					return
-				} else {
-					fmt.Fprintln(w, "1")
-					return
-				}
-
-			} else {
-				fmt.Fprintln(w, "-1")
+				fmt.Fprintln(w, "1")
 				return
 			}
 
+		} else {
+			fmt.Fprintln(w, "-1")
+			return
 		}
 
 	}
@@ -863,6 +898,7 @@ func main() {
 	http.HandleFunc("/Auth", Authenticator)
 	http.HandleFunc("/Verify", UserVerify)
 	http.HandleFunc("/UserName", UserNameChange)
+	http.HandleFunc("Avatar", AvatarChange)
 	http.HandleFunc("/EyeOfProvidence", GodsEye)
 	http.HandleFunc("/Frequest", SendFriendReq)
 	http.HandleFunc("/AccFrequest", AcceptFrequest)
