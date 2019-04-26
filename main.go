@@ -815,7 +815,7 @@ func UserVerify(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if result == true {
-					fmt.Fprintln(w, objid.Hex()+","+usrTemp.Name+","+usrTemp.Avatar)
+					fmt.Fprintln(w, objid.Hex()+"<>"+usrTemp.Name+"<>"+usrTemp.Avatar)
 				} else {
 					log.Println("user verification failed due to inituser/loginuser service failur:")
 					log.Println(data)
