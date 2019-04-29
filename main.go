@@ -612,8 +612,9 @@ func AvatarChange(w http.ResponseWriter, r *http.Request) {
 
 	_, _, err = image.Decode(bytes.NewReader(imageBytes))
 
+	// ***** DO SOMTHING ABOUT
 	if err != nil {
-		fmt.Fprintln(w, "0")
+		//fmt.Fprintln(w, "0")
 		log.Println("decode image file failed:")
 		log.Println(err)
 		log.Println("<=END")
