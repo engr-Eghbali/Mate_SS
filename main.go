@@ -918,6 +918,46 @@ func HandShake(w http.ResponseWriter, r *http.Request) {
 
 /////////////////////////////////////////////////
 ////////////////////////////////////////////////////
+
+////client asks for meeting list
+
+func RetrieveMeetings(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	r.ParseForm()
+	ID := r.Form["id"][0]
+	VC := r.Form["vc"][0]
+	var user structs.User
+
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	findErr := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+
+	if findErr == mgo.ErrNotFound || VC != user.Vc {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	if findErr != nil {
+		fmt.Fprintln(w, "0")
+		return
+	}
+
+	b, _ := bson.Marshal(user.Meetings)
+	resp := string(b)
+
+	fmt.Fprintln(w, resp)
+	return
+
+}
+
 ////////////////////////////////////////////////
 func main() {
 
@@ -956,6 +996,7 @@ func main() {
 	http.HandleFunc("/SetMeeting", SetMeeting)
 	http.HandleFunc("/LeaveMeeting", LeaveMeeting)
 	http.HandleFunc("/HandShake", HandShake)
+	http.HandleFunc("/ReqMeetingList", RetrieveMeetings)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
