@@ -953,6 +953,8 @@ func RetrieveMeetings(w http.ResponseWriter, r *http.Request) {
 	b, _ := bson.Marshal(user.Meetings)
 	resp := string(b)
 
+	log.Println(resp)
+
 	fmt.Fprintln(w, resp)
 	return
 
