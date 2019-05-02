@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"image"
 	"io/ioutil"
@@ -950,7 +951,7 @@ func RetrieveMeetings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, _ := bson.Marshal(user.Meetings)
+	b, _ := json.Marshal(user.Meetings)
 	resp := string(b)
 
 	log.Println(resp)
