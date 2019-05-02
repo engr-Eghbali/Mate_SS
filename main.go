@@ -962,6 +962,66 @@ func RetrieveMeetings(w http.ResponseWriter, r *http.Request) {
 
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+////////// client asks for his friendList
+func RetrieveFriends(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	type Profile struct {
+		Avatar string
+		Name   string
+	}
+	r.ParseForm()
+	ID := r.Form["id"][0]
+	VC := r.Form["vc"][0]
+	var user, friend structs.User
+
+	var friendsProfile []Profile
+
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	findErr := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+
+	if findErr == mgo.ErrNotFound || VC != user.Vc {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	if findErr != nil {
+		fmt.Fprintln(w, "0")
+		return
+	}
+
+	for _, f := range user.FriendList {
+
+		Err := collection.FindId(f).One(&friend)
+
+		if Err == nil {
+			friendsProfile = append(friendsProfile, Profile{Avatar: friend.Avatar, Name: friend.Name})
+		}
+
+	}
+
+	b, _ := json.Marshal(friendsProfile)
+	resp := string(b)
+
+	fmt.Fprintln(w, resp)
+	return
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 ////////////////////////////////////////////////
 func main() {
 
@@ -1001,6 +1061,7 @@ func main() {
 	http.HandleFunc("/LeaveMeeting", LeaveMeeting)
 	http.HandleFunc("/HandShake", HandShake)
 	http.HandleFunc("/ReqMeetingList", RetrieveMeetings)
+	http.HandleFunc("/ReqFriendList", RetrieveFriends)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
