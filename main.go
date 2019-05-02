@@ -350,7 +350,10 @@ func LeaveMeeting(w http.ResponseWriter, r *http.Request) {
 		log.Println(updateErr)
 		return
 	}
-	fmt.Fprintln(w, "1")
+
+	b, _ := json.Marshal(newMeetingList)
+
+	fmt.Fprintln(w, string(b))
 
 }
 
