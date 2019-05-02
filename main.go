@@ -257,11 +257,10 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 	ID := r.Form["id"][0] //objId
 	Vc := r.Form["vc"][0]
 	Title := r.Form["title"][0]
-	Time, terr := time.Parse(time.RFC3339, r.Form["time"][0])
+	Time, _ := time.Parse(time.RFC3339, r.Form["time"][0])
 	Crowd := strings.Split(r.Form["crowd"][0], ",")
 	Geo := structs.Location{X: strings.Split(r.Form["geo"][0], ",")[0], Y: strings.Split(r.Form["geo"][0], ",")[1]}
 
-	log.Println(terr)
 	var user, temp structs.User
 	var updateErr error
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
@@ -325,7 +324,7 @@ func LeaveMeeting(w http.ResponseWriter, r *http.Request) {
 	ID := r.Form["id"][0] //objId
 	Vc := r.Form["vc"][0]
 	Title := r.Form["title"][0]
-	Host := r.Form["host"][0]
+	geo := structs.Location{X: strings.Split(r.Form["geo"][0], ",")[0], Y: strings.Split(r.Form["geo"][0], ",")[1]}
 
 	var user structs.User
 	var newMeetingList []structs.Meet
@@ -338,7 +337,7 @@ func LeaveMeeting(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i, meet := range user.Meetings {
-		if meet.Title == Title && meet.Host == Host {
+		if meet.Title == Title && meet.Geo.X == geo.X && meet.Geo.Y == geo.Y {
 			newMeetingList = append(user.Meetings[:i], user.Meetings[i+1:]...)
 			break
 		}
