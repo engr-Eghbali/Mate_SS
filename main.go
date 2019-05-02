@@ -257,7 +257,7 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 	ID := r.Form["id"][0] //objId
 	Vc := r.Form["vc"][0]
 	Title := r.Form["title"][0]
-	Time, terr := time.Parse("2012-11-01 22:08:41", r.Form["time"][0])
+	Time, terr := time.Parse(time.RFC3339, r.Form["time"][0])
 	Crowd := strings.Split(r.Form["crowd"][0], ",")
 	Geo := structs.Location{X: strings.Split(r.Form["geo"][0], ",")[0], Y: strings.Split(r.Form["geo"][0], ",")[1]}
 
