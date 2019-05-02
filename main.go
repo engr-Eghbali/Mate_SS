@@ -261,6 +261,7 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 	Crowd := strings.Split(r.Form["crowd"][0], ",")
 	Geo := structs.Location{X: strings.Split(r.Form["geo"][0], ",")[0], Y: strings.Split(r.Form["geo"][0], ",")[1]}
 
+	log.Println(Time)
 	var user, temp structs.User
 	var updateErr error
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
@@ -953,8 +954,6 @@ func RetrieveMeetings(w http.ResponseWriter, r *http.Request) {
 
 	b, _ := json.Marshal(user.Meetings)
 	resp := string(b)
-
-	log.Println(resp)
 
 	fmt.Fprintln(w, resp)
 	return
