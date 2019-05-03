@@ -386,7 +386,7 @@ func SendFriendReq(w http.ResponseWriter, r *http.Request) {
 
 	findErr = collection.FindId(bson.ObjectIdHex(ID)).One(&user)
 	if findErr != nil {
-		fmt.Fprintln(w, "-1")
+		fmt.Fprintln(w, "0")
 		log.Println("friend request failur due to query error:")
 		log.Println(findErr)
 		log.Println("<=End")
@@ -409,7 +409,7 @@ func SendFriendReq(w http.ResponseWriter, r *http.Request) {
 	updateErr := collection.UpdateId(friend.ID, bson.M{"$set": bson.M{"requests": Reqlist}})
 
 	if updateErr != nil {
-		fmt.Fprintln(w, "-1")
+		fmt.Fprintln(w, "0")
 		log.Println("user F-Request failed due to query update error:")
 		log.Println(updateErr)
 		log.Println("<=End")
