@@ -1024,6 +1024,59 @@ func RetrieveFriends(w http.ResponseWriter, r *http.Request) {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+///check if user exist(by username) then return avatar+name else 0
+func WhoisUser(w http.ResponseWriter, r *http.Request) {
+
+	///**** append rate limitation func in this function is necesserlly ****/
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	type Profile struct {
+		Name   string
+		Avatar string
+	}
+	r.ParseForm()
+	ID := r.Form["id"][0]
+	VC := r.Form["vc"][0]
+	Query := r.Form["query"][0]
+
+	var friend structs.User
+	var queryResult Profile
+
+	if len(ID) < 20 || len(VC) < 6 || len(Query) < 3 {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	findErr := collection.Find(bson.M{"name": Query}).One(&friend)
+
+	if findErr == mgo.ErrNotFound {
+		fmt.Fprintln(w, "0")
+		return
+	}
+
+	if findErr != nil {
+		fmt.Fprintln(w, "0")
+		return
+	}
+
+	queryResult.Avatar = friend.Avatar
+	queryResult.Name = friend.Name
+
+	b, _ := json.Marshal(queryResult)
+	fmt.Fprintln(w, string(b))
+	return
+
+}
+
 ////////////////////////////////////////////////
 func main() {
 
@@ -1064,6 +1117,7 @@ func main() {
 	http.HandleFunc("/HandShake", HandShake)
 	http.HandleFunc("/ReqMeetingList", RetrieveMeetings)
 	http.HandleFunc("/ReqFriendList", RetrieveFriends)
+	http.HandleFunc("Whois", WhoisUser)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
