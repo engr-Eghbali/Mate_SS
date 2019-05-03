@@ -977,8 +977,9 @@ func RetrieveFriends(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type Profile struct {
-		Avatar string
+		ID     string
 		Name   string
+		Avatar string
 	}
 	r.ParseForm()
 	ID := r.Form["id"][0]
@@ -1006,7 +1007,7 @@ func RetrieveFriends(w http.ResponseWriter, r *http.Request) {
 		Err := collection.FindId(f).One(&friend)
 
 		if Err == nil {
-			friendsProfile = append(friendsProfile, Profile{Avatar: friend.Avatar, Name: friend.Name})
+			friendsProfile = append(friendsProfile, Profile{ID: friend.ID.Hex(), Name: friend.Name, Avatar: friend.Avatar})
 		}
 
 	}
