@@ -1117,7 +1117,7 @@ func main() {
 	http.HandleFunc("/HandShake", HandShake)
 	http.HandleFunc("/ReqMeetingList", RetrieveMeetings)
 	http.HandleFunc("/ReqFriendList", RetrieveFriends)
-	http.HandleFunc("Whois", WhoisUser)
+	http.HandleFunc("/Whois", WhoisUser)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
