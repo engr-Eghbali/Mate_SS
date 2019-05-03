@@ -97,11 +97,11 @@ func InitUser(id string, vc string, session *mgo.Session, clint *redis.Client) (
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
 
 	if strings.Contains(id, "@") {
-		NewUser := structs.User{ID: bson.NewObjectId(), Name: "", Phone: "", Email: id, Vc: vc, Status: 1, Avatar: "pic url here", FriendList: nil, Meetings: nil, Requests: nil}
+		NewUser := structs.User{ID: bson.NewObjectId(), Name: "", Phone: "", Email: id, Vc: vc, Status: 1, Avatar: "../assets/img/profileAvatar.svg", FriendList: nil, Meetings: nil, Requests: nil}
 		objid = NewUser.ID
 		InsertErr = collection.Insert(&NewUser)
 	} else {
-		NewUser := structs.User{ID: bson.NewObjectId(), Name: "", Phone: id, Email: "", Vc: vc, Status: 1, Avatar: "pic url here", FriendList: nil, Meetings: nil, Requests: nil}
+		NewUser := structs.User{ID: bson.NewObjectId(), Name: "", Phone: id, Email: "", Vc: vc, Status: 1, Avatar: "../assets/img/profileAvatar.svg", FriendList: nil, Meetings: nil, Requests: nil}
 		objid = NewUser.ID
 		InsertErr = collection.Insert(&NewUser)
 	}

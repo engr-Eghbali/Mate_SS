@@ -565,7 +565,10 @@ func Unfriend(w http.ResponseWriter, r *http.Request) {
 		log.Println("<=End")
 		return
 	}
-	fmt.Fprintln(w, "1")
+
+	b, _ := json.Marshal(NewFriendList1)
+
+	fmt.Fprintln(w, string(b))
 
 }
 
