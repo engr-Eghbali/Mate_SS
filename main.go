@@ -400,7 +400,7 @@ func SendFriendReq(w http.ResponseWriter, r *http.Request) {
 
 	for _, r := range friend.Requests {
 		if r.SenderName == user.Name {
-			fmt.Fprintln(w, "sent befor")
+			fmt.Fprintln(w, "2")
 			return
 		}
 	}
