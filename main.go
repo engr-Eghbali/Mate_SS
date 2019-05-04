@@ -1131,10 +1131,6 @@ func DenyFrequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type Profile struct {
-		Name   string
-		Avatar string
-	}
 	r.ParseForm()
 	ID := r.Form["id"][0]
 	VC := r.Form["vc"][0]
