@@ -495,7 +495,7 @@ func AcceptFrequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userCache = structs.UserCache{Geo: userTMP[0].Geo, Vc: userTMP[0].Vc, FriendList: append(userTMP[0].FriendList, friend.ID), Visibility: userTMP[0].Visibility}
-	friendCache = structs.UserCache{Geo: friendTMP[0].Geo, Vc: friendTMP[0].Vc, FriendList: append(friendTMP[0].FriendList, friend.ID), Visibility: friendTMP[0].Visibility}
+	friendCache = structs.UserCache{Geo: friendTMP[0].Geo, Vc: friendTMP[0].Vc, FriendList: append(friendTMP[0].FriendList, user.ID), Visibility: friendTMP[0].Visibility}
 
 	setCacheErr1 := services.SendToCache(user.ID.Hex(), userCache, redisClient)
 	setCacheErr2 := services.SendToCache(friend.ID.Hex(), friendCache, redisClient)
@@ -1077,6 +1077,46 @@ func WhoisUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+
+func RetrievePendigReqs(w http.ResponseWriter, r *http.Request) {
+
+	///**** append rate limitation func in this function is necesserlly ****/
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	type Profile struct {
+		Name   string
+		Avatar string
+	}
+	r.ParseForm()
+	ID := r.Form["id"][0]
+	VC := r.Form["vc"][0]
+
+	var user structs.User
+
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	findErr := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+
+	if findErr != nil || VC != user.Vc {
+		fmt.Fprintln(w, "0")
+		return
+	}
+
+	b, _ := json.Marshal(user.Requests)
+	fmt.Fprintln(w, string(b))
+	return
+
+}
+
 ////////////////////////////////////////////////
 func main() {
 
@@ -1118,6 +1158,7 @@ func main() {
 	http.HandleFunc("/ReqMeetingList", RetrieveMeetings)
 	http.HandleFunc("/ReqFriendList", RetrieveFriends)
 	http.HandleFunc("/Whois", WhoisUser)
+	http.HandleFunc("/ReqPendingReqs", RetrievePendigReqs)
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}
