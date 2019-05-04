@@ -385,7 +385,7 @@ func SendFriendReq(w http.ResponseWriter, r *http.Request) {
 	}
 
 	findErr = collection.FindId(bson.ObjectIdHex(ID)).One(&user)
-	if findErr != nil {
+	if findErr != nil { // +user.Name == Frequest
 		fmt.Fprintln(w, "0")
 		log.Println("friend request failur due to query error:")
 		log.Println(findErr)
@@ -1117,6 +1117,56 @@ func RetrievePendigReqs(w http.ResponseWriter, r *http.Request) {
 
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////deny a recieved frequest
+func DenyFrequest(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	type Profile struct {
+		Name   string
+		Avatar string
+	}
+	r.ParseForm()
+	ID := r.Form["id"][0]
+	VC := r.Form["vc"][0]
+	Target := r.Form["target"][0]
+	var user structs.User
+
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	findErr := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+
+	if findErr != nil || VC != user.Vc {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	for i, req := range user.Requests {
+		if req.SenderName == Target {
+			user.Requests = append(user.Requests[:i], user.Requests[i+1:]...)
+			updateErr := collection.UpdateId(user.ID, bson.M{"$set": bson.M{"request": user.Requests}})
+			if updateErr != nil {
+				fmt.Fprintln(w, "0")
+				return
+			} else {
+				fmt.Fprintln(w, "1")
+				return
+			}
+		}
+	}
+	fmt.Fprintln(w, "0")
+
+}
+
 ////////////////////////////////////////////////
 func main() {
 
@@ -1151,6 +1201,7 @@ func main() {
 	http.HandleFunc("/EyeOfProvidence", GodsEye)
 	http.HandleFunc("/Frequest", SendFriendReq)
 	http.HandleFunc("/AccFrequest", AcceptFrequest)
+	http.HandleFunc("/DenyFrequest", DenyFrequest)
 	http.HandleFunc("/Unfriend", Unfriend)
 	http.HandleFunc("/SetMeeting", SetMeeting)
 	http.HandleFunc("/LeaveMeeting", LeaveMeeting)
