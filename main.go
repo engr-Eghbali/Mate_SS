@@ -281,9 +281,9 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, personName := range Crowd {
+	for _, personID := range Crowd {
 
-		findErr = collection.Find(bson.M{"name": personName}).One(&temp)
+		findErr = collection.FindId(bson.ObjectIdHex(personID)).One(&temp)
 
 		if findErr == nil {
 			for _, id := range temp.FriendList {
@@ -303,7 +303,9 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	fmt.Fprintln(w, "1")
+	b, _ := json.Marshal(user.Meetings)
+
+	fmt.Fprintln(w, string(b))
 
 }
 
