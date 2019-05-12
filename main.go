@@ -370,6 +370,7 @@ func LeaveMeeting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println(newMeetingList)
 	b, Merr := json.Marshal(newMeetingList)
 
 	if Merr != nil {
