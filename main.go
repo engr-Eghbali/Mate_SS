@@ -267,7 +267,14 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 	Vc := r.Form["vc"][0]
 	Title := r.Form["title"][0]
 	Time, _ := time.Parse(time.RFC3339, r.Form["time"][0])
-	Crowd := strings.Split(r.Form["crowd"][0], ",")
+
+	var Crowd []string
+	if strings.Contains(r.Form["crowd"][0], ",") {
+		Crowd = strings.Split(r.Form["crowd"][0], ",")
+	} else {
+		Crowd[0] = r.Form["crowd"][0]
+	}
+
 	Geo := structs.Location{X: strings.Split(r.Form["geo"][0], ",")[0], Y: strings.Split(r.Form["geo"][0], ",")[1]}
 
 	var user, temp structs.User
