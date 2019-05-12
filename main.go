@@ -226,16 +226,25 @@ func GodsEye(w http.ResponseWriter, r *http.Request) {
 		}
 
 		///form the answer
-		var response string = "["
+		type GodResponse struct {
+			ID  string
+			Geo string
+		}
+		var response []GodResponse
 		for i, f := range Friends {
 			if f.Visibility == true {
-				response = response + "{\"ID\":\"" + friendKeys[i] + "\", \"Geo\":\"" + f.Geo + "\"},"
+
+				response = append(response, GodResponse{ID: friendKeys[i], Geo: f.Geo})
+
 			} else {
-				response = response + "{\"ID\":\"" + friendKeys[i] + "\", \"Geo\":\"0\"},"
+
+				response = append(response, GodResponse{ID: friendKeys[i], Geo: "0"})
+
 			}
 		}
-		response = strings.TrimSuffix(response, ",") + "]"
-		fmt.Fprintln(w, response)
+
+		b, _ := json.Marshal(response)
+		fmt.Fprintln(w, string(b))
 
 	}
 
@@ -353,7 +362,11 @@ func LeaveMeeting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, _ := json.Marshal(newMeetingList)
+	b, Merr := json.Marshal(newMeetingList)
+
+	if Merr != nil {
+		log.Println(Merr)
+	}
 
 	fmt.Fprintln(w, string(b))
 
