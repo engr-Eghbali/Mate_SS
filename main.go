@@ -299,6 +299,7 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 
 	for _, personID := range Crowd {
 
+		log.Println(personID)
 		findErr = collection.FindId(bson.ObjectIdHex(personID)).One(&temp)
 
 		if findErr == nil {
