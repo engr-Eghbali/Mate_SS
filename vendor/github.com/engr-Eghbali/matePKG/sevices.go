@@ -208,12 +208,12 @@ func PinMaker(avatar string) (markerB64 string) {
 	var buff bytes.Buffer
 
 	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(avatar))
-	profilePic, _, err := image.Decode(reader)
+	profilePic, _, _ := image.Decode(reader)
 	ppResized := imaging.Resize(profilePic, 40, 40, imaging.NearestNeighbor)
 
 	randPin := configs.GetPinBase()
 	reader = base64.NewDecoder(base64.StdEncoding, strings.NewReader(randPin))
-	pin, _, err2 := image.Decode(reader)
+	pin, _, _ := image.Decode(reader)
 
 	offset := image.Pt(12, 6)
 	b := pin.Bounds()
