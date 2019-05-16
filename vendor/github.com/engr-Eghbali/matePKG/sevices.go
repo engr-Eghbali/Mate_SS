@@ -1,7 +1,11 @@
 package services
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"image"
+	"image/draw"
+	"image/png"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -11,7 +15,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/disintegration/imaging"
+
 	structs "github.com/engr-Eghbali/matePKG/basement"
+	configs "github.com/engr-Eghbali/matePKG/basement/conf"
 	"github.com/go-redis/redis"
 
 	"gopkg.in/mgo.v2"
@@ -190,5 +197,31 @@ func SendToCache(key string, data structs.UserCache, client *redis.Client) (err 
 		log.Println(stat)
 		return false
 	}
+
+}
+
+/////////////////make special pins for every person
+
+func PinMaker(avatar string) (markerB64 string) {
+
+	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(avatar))
+	profilePic, _, err := image.Decode(reader)
+	ppResized := imaging.Resize(profilePic, 40, 40, imaging.NearestNeighbor)
+
+	randPin := configs.Pins[rand.Intn(5)]
+	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(randPin))
+	pin, _, err2 := image.Decode(reader)
+
+	offset := image.Pt(12, 6)
+	b := pin.Bounds()
+	marker := image.NewRGBA(b)
+	draw.Draw(marker, b, pin, image.ZP, draw.Src)
+	draw.Draw(marker, ppResized.Bounds().Add(offset), ppResized, image.ZP, draw.Over)
+
+	png.Encode(&buff, marker)
+	// Encode the bytes in the buffer to a base64 string
+	encodedString := base64.StdEncoding.EncodeToString(buff.Bytes())
+
+	return encodedString
 
 }

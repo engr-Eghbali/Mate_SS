@@ -2,15 +2,24 @@
 
 
 [[projects]]
+  digest = "1:47cebe27e59e4e0c239d0bf2419d6a46f0364a56efc43be702c32b82710b6ecf"
+  name = "github.com/disintegration/imaging"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5362c131d56305ce787e79a5b94ffc956df00d62"
+  version = "v1.6.0"
+
+[[projects]]
   branch = "master"
-  digest = "1:73cd2400bbdadfcf4e268fa52b1a12c5dc5276bbec1e5e7a2d9cdc4ac152eb2b"
+  digest = "1:7e9608a5a959c39ad3c12e4756d6f26487090cb527d1c593d66aa38ac38819c3"
   name = "github.com/engr-Eghbali/matePKG"
   packages = [
     ".",
     "basement",
+    "basement/conf",
   ]
   pruneopts = "UT"
-  revision = "415880dba20a9afa758fa06c71c97226581e9156"
+  revision = "e2edfaf5bd6ed5349e802a5af1793fff8a4627b9"
 
 [[projects]]
   digest = "1:33082c63746b464db3d1c2c07a1396d860484d97fe857ef9e8668a9b406db09f"
@@ -27,6 +36,18 @@
   pruneopts = "UT"
   revision = "d22fde8721cc915a55aeb6b00944a76a92bfeb6e"
   version = "v6.15.2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4c5fae3d31eb72f59429f9218ff258128ef37edcae9785f93bb9f1609b392c51"
+  name = "golang.org/x/image"
+  packages = [
+    "bmp",
+    "tiff",
+    "tiff/lzw",
+  ]
+  pruneopts = "UT"
+  revision = "61b8692d9a5c9886248d7f96e0ba50ad77baab4c"
 
 [[projects]]
   branch = "v2"

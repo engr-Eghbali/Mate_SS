@@ -226,19 +226,19 @@ func GodsEye(w http.ResponseWriter, r *http.Request) {
 		}
 
 		///form the answer
-		type GodResponse struct {
+		type Revelation struct {
 			ID  string
 			Geo string
 		}
-		var response []GodResponse
+		var response []Revelation
 		for i, f := range Friends {
 			if f.Visibility == true {
 
-				response = append(response, GodResponse{ID: friendKeys[i], Geo: f.Geo})
+				response = append(response, Revelation{ID: friendKeys[i], Geo: f.Geo})
 
 			} else {
 
-				response = append(response, GodResponse{ID: friendKeys[i], Geo: "0"})
+				response = append(response, Revelation{ID: friendKeys[i], Geo: "0"})
 
 			}
 		}
@@ -370,7 +370,6 @@ func LeaveMeeting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(newMeetingList)
 	b, Merr := json.Marshal(newMeetingList)
 
 	if Merr != nil {
@@ -1186,6 +1185,58 @@ func DenyFrequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "0")
 
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/////////make pin table for client
+func PinMap(w http.ResponseWriter,r *http.Request){
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	r.ParseForm()
+	ID := r.Form["id"][0]
+	VC := r.Form["vc"][0]
+
+	var user structs.User
+	var pinMap structs.PinMap
+    var fTemp structs.User
+
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	findErr := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+	if findErr != nil || VC != user.Vc {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	for fid,_:=range user.FriendList{
+
+		findErr=collection.FindId(fid).One(&fTemp)
+
+		if findErr!=nil{
+			pinMap=append(pinMap,structs.PinMap{ID:fid,Pin:'0'})	
+		}else{
+
+			marker:=services.PinMaker(strings.Replace(fTemp.Avatar,"data:image/png;base64,",'',1))
+			pinMap=append(pinMap,structs.PinMap{ID:fid,Pin:marker})
+		}
+
+	}
+
+	b,_:=json.Marshal(pinMap)
+	fmt.Fprintln(w,string(b))
+
+
+
+
+}
 
 ////////////////////////////////////////////////
 func main() {
@@ -1230,6 +1281,9 @@ func main() {
 	http.HandleFunc("/ReqFriendList", RetrieveFriends)
 	http.HandleFunc("/Whois", WhoisUser)
 	http.HandleFunc("/ReqPendingReqs", RetrievePendigReqs)
+	http.HandleFunc("/PinMap",PinMap)
+
+
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
 	}

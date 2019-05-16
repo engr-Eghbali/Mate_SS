@@ -59,3 +59,9 @@ type UserCache struct {
 	FriendList []bson.ObjectId `json:friendlist`
 	Visibility bool            `json:visibility`
 }
+
+
+type PinMap{
+	ID string
+	Pin string
+}
