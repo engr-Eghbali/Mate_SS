@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"image"
@@ -203,6 +204,8 @@ func SendToCache(key string, data structs.UserCache, client *redis.Client) (err 
 /////////////////make special pins for every person
 
 func PinMaker(avatar string) (markerB64 string) {
+
+	var buff bytes.Buffer
 
 	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(avatar))
 	profilePic, _, err := image.Decode(reader)
