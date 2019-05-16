@@ -60,8 +60,7 @@ type UserCache struct {
 	Visibility bool            `json:visibility`
 }
 
-
-type PinMap{
-	ID string
+type PinMap struct {
+	ID  string
 	Pin string
 }
