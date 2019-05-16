@@ -1185,12 +1185,12 @@ func DenyFrequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "0")
 
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 /////////make pin table for client
-func PinMap(w http.ResponseWriter,r *http.Request){
+func PinMap(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/javascript")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -1205,8 +1205,8 @@ func PinMap(w http.ResponseWriter,r *http.Request){
 	VC := r.Form["vc"][0]
 
 	var user structs.User
-	var pinMap structs.PinMap
-    var fTemp structs.User
+	var pinMap []structs.PinMap
+	var fTemp structs.User
 
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
 
@@ -1216,25 +1216,22 @@ func PinMap(w http.ResponseWriter,r *http.Request){
 		return
 	}
 
-	for fid,_:=range user.FriendList{
+	for _, fid := range user.FriendList {
 
-		findErr=collection.FindId(fid).One(&fTemp)
+		findErr = collection.FindId(fid).One(&fTemp)
 
-		if findErr!=nil{
-			pinMap=append(pinMap,structs.PinMap{ID:fid,Pin:'0'})	
-		}else{
+		if findErr != nil {
+			pinMap = append(pinMap, structs.PinMap{ID: fid.Hex(), Pin: "0"})
+		} else {
 
-			marker:=services.PinMaker(strings.Replace(fTemp.Avatar,"data:image/png;base64,",'',1))
-			pinMap=append(pinMap,structs.PinMap{ID:fid,Pin:marker})
+			marker := services.PinMaker(strings.Replace(fTemp.Avatar, "data:image/png;base64,", "", 1))
+			pinMap = append(pinMap, structs.PinMap{ID: fid.Hex(), Pin: marker})
 		}
 
 	}
 
-	b,_:=json.Marshal(pinMap)
-	fmt.Fprintln(w,string(b))
-
-
-
+	b, _ := json.Marshal(pinMap)
+	fmt.Fprintln(w, string(b))
 
 }
 
@@ -1281,8 +1278,7 @@ func main() {
 	http.HandleFunc("/ReqFriendList", RetrieveFriends)
 	http.HandleFunc("/Whois", WhoisUser)
 	http.HandleFunc("/ReqPendingReqs", RetrievePendigReqs)
-	http.HandleFunc("/PinMap",PinMap)
-
+	http.HandleFunc("/PinMap", PinMap)
 
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
 		panic(err)
