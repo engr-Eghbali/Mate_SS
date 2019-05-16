@@ -208,7 +208,7 @@ func PinMaker(avatar string) (markerB64 string) {
 	profilePic, _, err := image.Decode(reader)
 	ppResized := imaging.Resize(profilePic, 40, 40, imaging.NearestNeighbor)
 
-	randPin := configs.Pins[rand.Intn(5)]
+	randPin := configs.GetPinBase()
 	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(randPin))
 	pin, _, err2 := image.Decode(reader)
 
