@@ -222,7 +222,7 @@ func GodsEye(w http.ResponseWriter, r *http.Request) {
 		Friends, ferr := services.CacheRetrieve(redisClient, friendKeys...)
 		if ferr != nil {
 
-			log.Println(friendKeys)
+			log.Println(user)
 			fmt.Fprintln(w, "0")
 			return
 		}
