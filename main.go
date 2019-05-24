@@ -299,6 +299,12 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(Crowd) < 1 {
+		b, _ := json.Marshal(append(user.Meetings, newMeeting))
+		fmt.Fprintln(w, string(b))
+		return
+	}
+
 	for _, personID := range Crowd {
 
 		log.Println(personID)
@@ -322,7 +328,7 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	b, _ := json.Marshal(user.Meetings)
+	b, _ := json.Marshal(append(user.Meetings, newMeeting))
 
 	fmt.Fprintln(w, string(b))
 
@@ -732,6 +738,57 @@ func UserNameChange(w http.ResponseWriter, r *http.Request) {
 
 ////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
+
+////////////////change user mail on request
+func MailChange(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+
+	r.ParseForm()
+	VC := r.Form["vc"][0]
+	ID := r.Form["id"][0]
+	Mail := r.Form["mail"][0]
+
+	var temp = new(structs.User)
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+
+	FindErr := collection.Find(bson.M{"email": Mail}).One(&temp)
+
+	if FindErr == nil {
+		fmt.Fprintln(w, "reserved")
+		return
+	}
+
+	if FindErr == mgo.ErrNotFound {
+
+		FindErr = collection.FindId(bson.ObjectIdHex(ID)).One(&temp)
+
+		if temp.Vc == VC && len(temp.Phone) > 7 {
+
+			UpdateErr := collection.UpdateId(temp.ID, bson.M{"$set": bson.M{"email": Mail}})
+
+			if UpdateErr != nil {
+				fmt.Fprintln(w, "0")
+				return
+			} else {
+				fmt.Fprintln(w, "1")
+				return
+			}
+
+		} else {
+			fmt.Fprintln(w, "-1")
+			return
+		}
+
+	}
+
+}
 
 ///// Generate/save/send verification code to client Email
 func SendVerificationMail(mail string) (err bool) {
@@ -1267,6 +1324,7 @@ func main() {
 	http.HandleFunc("/Auth", Authenticator)
 	http.HandleFunc("/Verify", UserVerify)
 	http.HandleFunc("/UserName", UserNameChange)
+	http.HandleFunc("/Email", MailChange)
 	http.HandleFunc("/Avatar", AvatarChange)
 	http.HandleFunc("/EyeOfProvidence", GodsEye)
 	http.HandleFunc("/Frequest", SendFriendReq)
