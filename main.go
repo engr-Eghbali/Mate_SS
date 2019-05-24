@@ -299,7 +299,7 @@ func SetMeeting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(Crowd) < 1 {
+	if Crowd[0] == "" {
 		b, _ := json.Marshal(append(user.Meetings, newMeeting))
 		fmt.Fprintln(w, string(b))
 		return
