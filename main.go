@@ -1022,6 +1022,8 @@ func RetrieveMeetings(w http.ResponseWriter, r *http.Request) {
 	ID := r.Form["id"][0]
 	VC := r.Form["vc"][0]
 	var user structs.User
+	var temp structs.User
+	var crowdsName []string
 
 	collection := session.DB("bkbfbtpiza46rc3").C("users")
 
@@ -1035,6 +1037,19 @@ func RetrieveMeetings(w http.ResponseWriter, r *http.Request) {
 	if findErr != nil {
 		fmt.Fprintln(w, "0")
 		return
+	}
+
+	for i, meet := range user.Meetings {
+
+		for _, person := range meet.Crowd {
+
+			findErr = collection.FindId(bson.ObjectIdHex(person)).One(&temp)
+			if findErr == nil {
+				crowdsName = append(crowdsName, temp.Name)
+			}
+		}
+		user.Meetings[i].Crowd = crowdsName
+		crowdsName = nil
 	}
 
 	b, _ := json.Marshal(user.Meetings)
