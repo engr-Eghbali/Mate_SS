@@ -11,7 +11,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:10e8bfc499ec694ce46e1435d817904d8e6ff2be95b3a315ec87a56847796a1b"
+  digest = "1:e2b3ed0112927acb28f9631d74b4ca314b544fcba80171cd4d32fd8eb702fbdf"
   name = "github.com/engr-Eghbali/matePKG"
   packages = [
     ".",
@@ -19,7 +19,7 @@
     "basement/conf",
   ]
   pruneopts = "UT"
-  revision = "ed41d9e8d71e844ad11e6b38acff1093da779a8c"
+  revision = "bf60f0764aa360f7f10c4aad17040e4d6a16bc9e"
 
 [[projects]]
   digest = "1:33082c63746b464db3d1c2c07a1396d860484d97fe857ef9e8668a9b406db09f"

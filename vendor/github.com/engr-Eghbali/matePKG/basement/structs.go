@@ -22,12 +22,20 @@ type Request struct {
 	SenderPic  string `json:sendername`
 }
 
+type Bill struct {
+	Issuer string `json:issuer`
+	Title  string `json:title`
+	Sum    int32  `json:sum`
+	Share  string `json:share`
+}
+
 type Meet struct {
-	Title string    `json:title`
-	Time  time.Time `json:time`
-	Host  string    `json:host`
-	Crowd []string  `json:crowd`
-	Geo   Location  `json:location`
+	Title   string    `json:title`
+	Time    time.Time `json:time`
+	Host    string    `json:host`
+	Crowd   []string  `json:crowd`
+	Geo     Location  `json:location`
+	Invoice []Bill    `json:invoice`
 }
 
 type User struct {
