@@ -1041,13 +1041,18 @@ func RetrieveMeetings(w http.ResponseWriter, r *http.Request) {
 
 	for i, meet := range user.Meetings {
 
-		for _, person := range meet.Crowd {
+		if len(meet.Crowd) > 0 {
 
-			findErr = collection.FindId(bson.ObjectIdHex(person)).One(&temp)
-			if findErr == nil {
-				crowdsName = append(crowdsName, temp.Name)
+			for _, person := range meet.Crowd {
+
+				findErr = collection.FindId(bson.ObjectIdHex(person)).One(&temp)
+				if findErr == nil {
+					crowdsName = append(crowdsName, temp.Name)
+				}
 			}
+
 		}
+
 		user.Meetings[i].Crowd = crowdsName
 		crowdsName = nil
 	}
