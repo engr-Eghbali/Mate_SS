@@ -23,10 +23,10 @@ type Request struct {
 }
 
 type Bill struct {
-	Issuer string `json:issuer`
-	Title  string `json:title`
-	Sum    int32  `json:sum`
-	Share  string `json:share`
+	Issuer string   `json:issuer`
+	Title  string   `json:title`
+	Sum    int32    `json:sum`
+	Share  []string `json:share`
 }
 
 type Meet struct {

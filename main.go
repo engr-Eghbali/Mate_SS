@@ -255,6 +255,106 @@ func GodsEye(w http.ResponseWriter, r *http.Request) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////user request to add a bill on the meeting
+
+func AddBill(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/javascript")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if r.Method != "POST" {
+		fmt.Fprintln(w, "bad request")
+		return
+	}
+	r.ParseForm()
+	ID := r.Form["id"][0] //objId
+	Vc := r.Form["vc"][0]
+	Title := r.Form["title"][0]
+	Geostr := strings.Split(r.Form["geo"][0], ",")
+	Geo := structs.Location{X: Geostr[0], Y: Geostr[1]}
+	var Bill structs.Bill
+	var user structs.User
+	var updateErr error
+	err := json.Unmarshal([]byte(r.Form["bill"][0]), &Bill)
+
+	if err != nil {
+		fmt.Fprintln(w, "bad format request")
+		return
+	}
+
+	collection := session.DB("bkbfbtpiza46rc3").C("users")
+	findErr := collection.FindId(bson.ObjectIdHex(ID)).One(&user)
+
+	if findErr != nil || user.Vc != Vc {
+		fmt.Fprintln(w, "-1")
+		return
+	}
+
+	for _, meet := range user.Meetings {
+		if meet.Title == Title && meet.Geo == Geo {
+
+			updateInvoice := append(meet.Invoice, Bill)
+			meet.Crowd = append(meet.Crowd, ID)
+
+			for i, personId := range meet.Crowd {
+
+				query := bson.M{
+					"_id":            bson.ObjectIdHex(personId),
+					"Meetings.Title": Title,
+					"Meetings.Geo":   Geo,
+				}
+				update := bson.M{
+					"$set": bson.M{
+						"Meetings.$.Invoice": updateInvoice,
+					},
+				}
+
+				updateErr = collection.Update(query, update)
+
+				if updateErr != nil {
+					log.Println("invoice update failed:")
+					log.Println(personId)
+					log.Println("trying again...")
+					updateErr = collection.Update(query, update)
+					if updateErr != nil {
+						log.Println("**aborted** <=END")
+						log.Println("Rolling Back Transactions...")
+						for j := 0; j < i; j++ {
+
+							query = bson.M{
+								"_id":            bson.ObjectIdHex(meet.Crowd[j]),
+								"Meetings.Title": Title,
+								"Meetings.Geo":   Geo,
+							}
+							update = bson.M{
+								"$pop": bson.M{
+									"Meetings.$.Invoice": 1,
+								},
+							}
+
+							updateErr = collection.Update(query, update)
+						}
+
+						if updateErr == nil {
+							log.Println("DONE...! <=END")
+						} else {
+							log.Println("**RollBack failur occured**")
+						}
+						fmt.Fprintln(w, "0")
+						return
+					} else {
+						log.Println("DONE...! <=END")
+					}
+
+				}
+			}
+
+			fmt.Fprintln(w, "1")
+			return
+		}
+	}
+
+}
+
 /////////////setup a meeting
 func SetMeeting(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/javascript")
@@ -1360,6 +1460,7 @@ func main() {
 	http.HandleFunc("/ReqFriendList", RetrieveFriends)
 	http.HandleFunc("/Whois", WhoisUser)
 	http.HandleFunc("/ReqPendingReqs", RetrievePendigReqs)
+	http.HandleFunc("/Bill", AddBill)
 	http.HandleFunc("/PinMap", PinMap)
 
 	if Porterr := http.ListenAndServe(addr, nil); Porterr != nil {
